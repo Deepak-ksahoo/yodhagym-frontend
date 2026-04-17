@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, ShieldCheck, MapPin, Mail, Phone, Pencil } from 'lucide-react';
-import axios from 'axios';
+import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../../context/AuthContext'; // ✅ ADDED
 import { uploadImageToCloudinary } from '../../../utils/uploadImageToCloudinary';
 import './Profile.scss';
 
-const API = 'http://localhost:5000/api/user/admin-profile';
+const API = '/api/user/admin-profile';
 
 const Profile = () => {
   const [admin, setAdmin] = useState(null);
@@ -24,7 +24,7 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('yodha_token');
-        const res = await axios.get(API, {
+        const res = await api.get(API, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -76,7 +76,7 @@ const Profile = () => {
         profilePic: profilePicUrl,
       };
 
-      const res = await axios.patch(API, payload, {
+      const res = await api.patch(API, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

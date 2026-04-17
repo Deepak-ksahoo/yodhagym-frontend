@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Fingerprint, ArrowLeft, Mail, Loader2, Edit3, Send } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './LoginPage.scss';
+import { API_BASE_URL } from '../../utils/api';
 
 const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
@@ -34,7 +35,7 @@ const LoginPage = () => {
 
     try {
       const payload = getPayload(false);
-      const response = await fetch('http://localhost:5000/api/user/request-otp', {
+      const response = await fetch(`${API_BASE_URL}/api/user/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -75,7 +76,7 @@ const LoginPage = () => {
 
     try {
       const payload = getPayload(true);
-      const response = await fetch('http://localhost:5000/api/user/verify-otp', {
+      const response = await fetch(`${API_BASE_URL}/api/user/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

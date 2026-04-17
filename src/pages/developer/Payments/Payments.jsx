@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import api from '../../../utils/api';
 import {
   Search,
   Plus,
@@ -14,10 +14,10 @@ import { toast } from 'react-toastify';
 import './Payments.scss';
 import { useAuth } from '../../../context/AuthContext';
 
-const PAYMENTS_API = 'http://localhost:5000/api/payments/getallpayment';
-const CREATE_PAYMENT_API = 'http://localhost:5000/api/payments/createpayment';
-const MEMBERS_API = 'http://localhost:5000/api/members/getallmembers';
-const PLANS_API = 'http://localhost:5000/api/plans/getallplans';
+const PAYMENTS_API = '/api/payments/getallpayment';
+const CREATE_PAYMENT_API = '/api/payments/createpayment';
+const MEMBERS_API = '/api/members/getallmembers';
+const PLANS_API = '/api/plans/getallplans';
 const DUE_MEMBER_TOAST_ID = 'payment-due-member-warning';
 
 const normalizeDate = (value) => {
@@ -177,7 +177,7 @@ const Payments = () => {
         queryParams.searchFields = 'member.fullName,member.number,member.email,plan.planName,payment.paymentMethod,payment.paymentStatus';
       }
 
-      const response = await axios.get(PAYMENTS_API, {
+      const response = await api.get(PAYMENTS_API, {
         params: queryParams,
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -228,7 +228,7 @@ const Payments = () => {
 
     setCustomersLoading(true);
     try {
-      const response = await axios.get(MEMBERS_API, {
+      const response = await api.get(MEMBERS_API, {
         params: { page: 1, limit: 300 },
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -248,7 +248,7 @@ const Payments = () => {
 
     setPlansLoading(true);
     try {
-      const response = await axios.get(PLANS_API, {
+      const response = await api.get(PLANS_API, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
@@ -507,7 +507,7 @@ const Payments = () => {
 
     try {
       setSubmitLoading(true);
-      const response = await axios.post(CREATE_PAYMENT_API, payload, {
+      const response = await api.post(CREATE_PAYMENT_API, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,

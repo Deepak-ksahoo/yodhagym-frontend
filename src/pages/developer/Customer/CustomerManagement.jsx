@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import {
   Search, UserPlus, Pencil, UserX, UserCheck, Eye,
@@ -10,11 +10,11 @@ import './CustomerManagement.scss';
 import { uploadImageToCloudinary } from '../../../utils/uploadImageToCloudinary';
 import { useAuth } from '../../../context/AuthContext';
 
-const MEMBER_LIST_API = 'http://localhost:5000/api/members/getallmembers';
-const CREATE_MEMBER_API = 'http://localhost:5000/api/member/createmember';
-const PLANS_API = 'http://localhost:5000/api/plans/getallplans';
-const UPDATE_MEMBER_API = 'http://localhost:5000/api/members/memberprofileupdatebyadmin';
-const TOGGLE_MEMBER_STATUS_API = 'http://localhost:5000/api/members/suspendmemberbyadmin';
+const MEMBER_LIST_API = '/api/members/getallmembers';
+const CREATE_MEMBER_API = '/api/member/createmember';
+const PLANS_API = '/api/plans/getallplans';
+const UPDATE_MEMBER_API = '/api/members/memberprofileupdatebyadmin';
+const TOGGLE_MEMBER_STATUS_API = '/api/members/suspendmemberbyadmin';
 
 const getInputDate = (value) => {
   if (!value) return '';
@@ -140,7 +140,7 @@ const CustomerManagement = () => {
         queryParams.searchFields = 'user.fullName,user.email,user.number,member.gender,member.emergencyContact,plan.planName,plan.tag';
       }
 
-      const response = await axios.get(MEMBER_LIST_API, {
+      const response = await api.get(MEMBER_LIST_API, {
         params: queryParams,
         headers: { Authorization: `Bearer ${authToken}` }
       });
@@ -198,7 +198,7 @@ const CustomerManagement = () => {
       const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
       if (!authToken) throw new Error('Missing auth token. Please login again.');
 
-      const response = await axios.get(PLANS_API, {
+      const response = await api.get(PLANS_API, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
 
@@ -483,7 +483,7 @@ const CustomerManagement = () => {
 
     try {
       setSubmitLoading(true);
-      const response = await axios.post(CREATE_MEMBER_API, payload, {
+      const response = await api.post(CREATE_MEMBER_API, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
@@ -674,7 +674,7 @@ const CustomerManagement = () => {
 
       console.log("Sending Final Payload:", payload); // Debugging ke liye check karo
 
-      const response = await axios.put(UPDATE_MEMBER_API, payload, {
+      const response = await api.put(UPDATE_MEMBER_API, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
@@ -749,7 +749,7 @@ const CustomerManagement = () => {
     try {
       setStatusUpdatingMemberId(memberId);
       setErrorMessage('');
-      const response = await axios.patch(
+      const response = await api.patch(
         TOGGLE_MEMBER_STATUS_API,
         {
           memberId,

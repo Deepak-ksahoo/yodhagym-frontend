@@ -183,6 +183,40 @@
   flex-shrink: 0;
 }
 
+.plan-history-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(86, 215, 255, 0.45);
+  background: linear-gradient(115deg, rgba(12, 112, 196, 0.38), rgba(24, 169, 192, 0.3));
+  color: #eef8ff;
+  border-radius: 9px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(14, 107, 170, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.plan-history-btn svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.plan-history-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 11px 22px rgba(14, 107, 170, 0.35);
+  filter: brightness(1.04);
+}
+
+.plan-history-btn:focus-visible {
+  outline: 2px solid rgba(86, 215, 255, 0.8);
+  outline-offset: 2px;
+}
+
 .details-lines {
   display: grid;
   gap: 0.48rem;
@@ -920,8 +954,13 @@
     flex: 1 1 auto;
   }
 
-  .card-head .icon-btn {
+  .card-head .plan-history-btn {
     margin-left: auto;
+  }
+
+  .plan-history-btn {
+    width: 30px;
+    height: 30px;
   }
 
   .details-lines p {
@@ -990,9 +1029,14 @@
     font-size: 0.94rem;
   }
 
-  .card-head .icon-btn {
-    width: 28px;
-    height: 28px;
+  .card-head {
+    flex-wrap: nowrap;
+  }
+
+  .plan-history-btn {
+    width: 30px;
+    height: 30px;
+    margin-top: 0;
   }
 
   .finance-table th,

@@ -1,10 +1,10 @@
-const NOTIFICATIONS_API = 'http://localhost:5000/api/notifications/getallnotifications';
-
 import React, { useEffect, useState } from 'react';
 import { Search, Send, Mail, Phone } from 'lucide-react';
-import axios from 'axios';
+import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import './Notifications.scss';
+
+const NOTIFICATIONS_API = '/api/notifications/getallnotifications';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
@@ -28,7 +28,7 @@ const Notifications = () => {
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem('yodha_token');
-        const res = await axios.get(NOTIFICATIONS_API, {
+        const res = await api.get(NOTIFICATIONS_API, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data?.success) {

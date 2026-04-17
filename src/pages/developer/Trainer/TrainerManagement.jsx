@@ -22,13 +22,14 @@ import {
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./TrainerManagement.scss";
+import { API_BASE_URL } from "../../../utils/api";
 
-const TRAINER_API = "http://localhost:5000/api/trainer/all";
-const ADD_TRAINER_API = "http://localhost:5000/api/trainer/add";
-const UPDATE_TRAINER_API = "http://localhost:5000/api/trainer/update";
-const UPDATE_TRAINER_API_ALT = "http://localhost:5000/api/trainers/update";
-const DELETE_TRAINER_API = "http://localhost:5000/api/trainer/delete";
-const DELETE_TRAINER_API_ALT = "http://localhost:5000/api/trainers/delete";
+const TRAINER_API = `${API_BASE_URL}/api/trainer/all`;
+const ADD_TRAINER_API = `${API_BASE_URL}/api/trainer/add`;
+const UPDATE_TRAINER_API = `${API_BASE_URL}/api/trainer/update`;
+const UPDATE_TRAINER_API_ALT = `${API_BASE_URL}/api/trainers/update`;
+const DELETE_TRAINER_API = `${API_BASE_URL}/api/trainer/delete`;
+const DELETE_TRAINER_API_ALT = `${API_BASE_URL}/api/trainers/delete`;
 
 const SPECIALIZATIONS_LIST = [
   "Yoga",

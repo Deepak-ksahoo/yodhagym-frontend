@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import {
   ArrowLeft,
@@ -21,8 +21,9 @@ import {
 import './CustomerDetails.scss';
 import { useAuth } from '../../../context/AuthContext';
 
-const API_URL = 'http://localhost:5000/api/members/getallmembers';
-const CLEAR_DUE_API = 'http://localhost:5000/api/payments/clearduepayment';
+const API_URL = '/api/members/getallmembers';
+const CLEAR_DUE_API = '/api/payments/clearduepayment';
+const PLANS_API = '/api/plans/getallplans';
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -153,7 +154,7 @@ const CustomerDetails = () => {
         const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
         if (!authToken) throw new Error('Missing auth token. Please login again.');
 
-        const response = await axios.get(`${API_URL}?page=1&limit=250`, {
+        const response = await api.get(`${API_URL}?page=1&limit=250`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 
@@ -186,7 +187,7 @@ const CustomerDetails = () => {
         const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
         if (!authToken) return;
 
-        const response = await axios.get('http://localhost:5000/api/plans/getallplans', {
+        const response = await api.get(PLANS_API, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 
@@ -487,7 +488,7 @@ const CustomerDetails = () => {
 
     try {
       setClearDueSubmitting(true);
-      const response = await axios.patch(CLEAR_DUE_API, payload, {
+      const response = await api.patch(CLEAR_DUE_API, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
@@ -673,11 +674,12 @@ const CustomerDetails = () => {
             <h3><BadgeCheck size={16} /> Plan Details</h3>
             <button
               type="button"
-              className="icon-btn"
+              className="plan-history-btn"
               onClick={() => setOpenPlanHistoryModal(true)}
               title="View Plan History"
+              aria-label="Open plan history"
             >
-              <History size={14} />
+              <History size={15} />
             </button>
           </div>
           <div className="details-lines">

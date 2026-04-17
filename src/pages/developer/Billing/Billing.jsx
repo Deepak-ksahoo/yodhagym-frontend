@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import api from '../../../utils/api';
 import { Search, Receipt, Download, Share2, BadgeCheck, Clock, Wallet, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './Billing.scss';
 import { useAuth } from '../../../context/AuthContext';
 
-const BILLINGS_API = 'http://localhost:5000/api/billings/getallbilling';
-const PLANS_API = 'http://localhost:5000/api/plans/getallplans';
+const BILLINGS_API = '/api/billings/getallbilling';
+const PLANS_API = '/api/plans/getallplans';
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -185,7 +185,7 @@ const Billing = () => {
         queryParams.searchFields = 'invoiceNumber,receiptNumber,paymentId,member.fullName,member.number,plan.planName,paymentStatus,status';
       }
 
-      const response = await axios.get(BILLINGS_API, {
+      const response = await api.get(BILLINGS_API, {
         params: queryParams,
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -238,7 +238,7 @@ const Billing = () => {
         const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
         if (!authToken) return;
 
-        const response = await axios.get(PLANS_API, {
+        const response = await api.get(PLANS_API, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 

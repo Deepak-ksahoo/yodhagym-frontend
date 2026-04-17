@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { PlusCircle, Pencil, Trash2, Sparkles, X, AlertTriangle } from 'lucide-react';
 import './Plans.scss';
 import { useAuth } from '../../../context/AuthContext';
+import { API_BASE_URL } from '../../../utils/api';
 
-const API_BASE = 'http://localhost:5000/api/plans';
+const API_BASE = `${API_BASE_URL}/api/plans`;
 
 const defaultForm = {
   planName: '',
