@@ -21,6 +21,7 @@ import {
   Package,
   Receipt,
   UserCircle,
+  LogOut,
   Menu,
   X,
 } from "lucide-react";
@@ -126,8 +127,13 @@ const DashboardLayout = () => {
               </NavLink>
             );
           })}
-          <button onClick={handleLogout} className="mobile-logout-btn">
-            Sign Out
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mobile-logout-btn"
+          >
+            <LogOut size={16} aria-hidden="true" />
+            <span>Sign Out</span>
           </button>
         </nav>
 

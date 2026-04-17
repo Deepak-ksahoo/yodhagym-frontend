@@ -1863,7 +1863,7 @@ body.mobile-menu-open {
   height: 100vh;
   background: linear-gradient(180deg, #0e1d36 0%, #090f1d 100%);
   border-left: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 18px 16px 24px;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   transform: translateX(105%);
   transition: transform 0.28s ease;
@@ -1871,6 +1871,7 @@ body.mobile-menu-open {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow: hidden;
 }
 
 .landing .mobile-nav-drawer.open {
@@ -1907,6 +1908,9 @@ body.mobile-menu-open {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .landing .mobile-nav-menu li a {
@@ -1927,7 +1931,10 @@ body.mobile-menu-open {
 }
 
 .landing .mobile-auth-btn {
-  margin-top: auto;
+  margin-top: 6px;
+  width: 100%;
+  display: block;
+  flex-shrink: 0;
   border: none;
   background: linear-gradient(90deg, #de1f28, #ff3f3f);
   color: #ffffff;
