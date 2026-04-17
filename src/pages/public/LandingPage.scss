@@ -1930,18 +1930,16 @@ body.mobile-menu-open {
   color: #ff7070;
 }
 
-.landing .mobile-auth-btn {
-  margin-top: 6px;
-  width: 100%;
-  display: block;
-  flex-shrink: 0;
-  border: none;
-  background: linear-gradient(90deg, #de1f28, #ff3f3f);
-  color: #ffffff;
+.landing .mobile-nav-menu li.mobile-auth-option a {
+  border-color: rgba(255, 87, 87, 0.45);
+  background: rgba(222, 31, 40, 0.14);
+  color: #ff8f8f;
   font-weight: 700;
-  border-radius: 10px;
-  padding: 12px;
-  cursor: pointer;
+}
+
+.landing .mobile-nav-menu li.mobile-auth-option a:hover {
+  border-color: rgba(255, 87, 87, 0.72);
+  color: #ffd5d5;
 }
 
 @media (max-width: 1024px) {

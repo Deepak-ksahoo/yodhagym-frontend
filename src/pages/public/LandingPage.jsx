@@ -156,17 +156,19 @@ const LandingPage = () => {
 							<a href={item.href} onClick={closeMobileMenu}>{item.label}</a>
 						</li>
 					))}
+					<li className="mobile-auth-option">
+						<a
+							href={user ? '/member/dashboard' : '/login'}
+							onClick={(event) => {
+								event.preventDefault();
+								closeMobileMenu();
+								handleDashboardRedirect();
+							}}
+						>
+							{user ? 'Enter System' : 'Login'}
+						</a>
+					</li>
 				</ul>
-				<button
-					type="button"
-					className="mobile-auth-btn"
-					onClick={() => {
-						closeMobileMenu();
-						handleDashboardRedirect();
-					}}
-				>
-					{user ? 'Enter System' : 'LOGIN'}
-				</button>
 			</aside>
 
 			<section id="home" className="hero">
