@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Outlet, NavLink, Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+  Outlet,
+  NavLink,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { useAuth, ROLES } from "../../context/AuthContext";
 import {
   LayoutDashboard,
@@ -64,7 +70,10 @@ const DashboardLayout = () => {
 
   if (!user) return <Navigate to="/" replace />;
 
-  const normalizedRole = typeof user?.role === "string" ? user.role.trim().toLowerCase() : user?.role;
+  const normalizedRole =
+    typeof user?.role === "string"
+      ? user.role.trim().toLowerCase()
+      : user?.role;
   const links = SIDEBAR_LINKS[normalizedRole] || [];
 
   const handleLogout = () => {
@@ -117,14 +126,12 @@ const DashboardLayout = () => {
               </NavLink>
             );
           })}
+          <button onClick={handleLogout} className="mobile-logout-btn">
+            Sign Out
+          </button>
         </nav>
 
         {/* User Quick Info at Bottom of Sidebar */}
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="minimal-logout">
-            <span>Sign Out</span>
-          </button>
-        </div>
       </aside>
 
       <div className="main-wrapper">
@@ -134,7 +141,9 @@ const DashboardLayout = () => {
               type="button"
               className="mobile-menu-btn"
               onClick={() => setIsSidebarOpen((prev) => !prev)}
-              aria-label={isSidebarOpen ? "Close navigation" : "Open navigation"}
+              aria-label={
+                isSidebarOpen ? "Close navigation" : "Open navigation"
+              }
               aria-expanded={isSidebarOpen}
             >
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
