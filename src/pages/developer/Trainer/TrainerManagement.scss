@@ -1,0 +1,854 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+// --- VARIABLES ---
+$bg-dark: #0d1117; 
+$card-bg: #1a1f26; 
+$modal-bg: #12161c;
+$input-bg: #080a0d;
+$border-color: #30363d;
+$text-white: #ffffff; 
+$text-label: #a3b3c4; 
+$neon-green: #37ff8b;
+$neon-green-dim: rgba(55, 255, 139, 0.15);
+$error-red: #ff4d4d;
+
+// --- RESET & UTILS ---
+.trainer-dashboard {
+  background: $bg-dark;
+  min-height: 100vh;
+  padding: 2.5rem;
+  font-family: 'Inter', sans-serif;
+  color: $text-white;
+  overflow-x: hidden; // Prevent dashboard horizontal scroll
+
+  .no-spinners::-webkit-inner-spin-button,
+  .no-spinners::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  
+  .text-white { color: $text-white !important; }
+}
+
+// --- DASHBOARD HEADER ---
+.dashboard-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 2.5rem;
+  gap: 20px;
+
+  .title-section {
+    display: flex; 
+    align-items: center; 
+    gap: 15px;
+    .icon-hub { 
+      color: $neon-green; 
+      background: rgba($neon-green, 0.1); 
+      padding: 12px; 
+      border-radius: 12px; 
+      border: 1px solid rgba($neon-green, 0.2); 
+    }
+    h1 { font-size: 28px; font-weight: 800; margin: 0; }
+    p { margin: 5px 0 0; color: $text-label; font-size: 14px; }
+  }
+
+  .action-bar {
+    display: flex; 
+    gap: 15px;
+    .search-box {
+      display: flex; 
+      align-items: center; 
+      background: $card-bg; 
+      border: 1px solid $border-color; 
+      border-radius: 10px; 
+      padding: 0 15px;
+      input { 
+        background: transparent; 
+        border: none; 
+        color: white; 
+        padding: 10px; 
+        width: 220px; 
+        &:focus { outline: none; } 
+      }
+    }
+    .prime-add-btn {
+      background: $neon-green; 
+      color: #000; 
+      padding: 10px 24px; 
+      border-radius: 10px; 
+      border: none; 
+      font-weight: 700; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+      transition: all 0.3s ease;
+      &:hover { background: white; transform: translateY(-2px); }
+    }
+  }
+}
+
+// --- TRAINER GRID ---
+.trainer-glory-grid {
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); 
+  gap: 1.8rem;
+}
+
+.compact-trainer-card {
+  background: $card-bg; 
+  border-radius: 16px; 
+  border: 1px solid $border-color; 
+  padding: 20px;
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+
+  &:hover { border-color: rgba($neon-green, 0.5); transform: translateY(-4px); }
+
+  .card-top-header {
+    display: flex; 
+    gap: 12px; 
+    margin-bottom: 15px;
+    align-items: flex-start;
+    .avatar-shield { 
+      width: 50px; height: 50px; 
+      background: linear-gradient(135deg, $neon-green, #2ecc71); 
+      color: #000; display: grid; place-items: center; 
+      border-radius: 12px; font-weight: 800; font-size: 20px;
+      flex-shrink: 0;
+    }
+    .header-info { 
+      flex: 1; 
+      min-width: 0;
+      .name-row { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        gap: 10px;
+        h3 { 
+          font-size: 17px; 
+          margin: 0;
+          line-height: 1.3;
+          word-break: break-word;
+        } 
+      }
+      .status-dot { width: 9px; height: 9px; border-radius: 50%; &.active { background: $neon-green; box-shadow: 0 0 8px $neon-green;} &.inactive { background: $error-red; } }
+      .sub-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; .badge { font-size: 10px; padding: 2px 8px; border-radius: 5px; background: #232a33; color: $text-label; border: 1px solid $border-color; } }
+    }
+  }
+
+  .info-data-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 10px; 
+    background: rgba(0,0,0,0.2); 
+    padding: 12px; 
+    border-radius: 12px; 
+    margin-bottom: 15px; 
+    .data-box { 
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba($border-color, 0.8);
+      border-radius: 10px;
+      padding: 8px;
+      .label { font-size: 10px; color: $text-label; text-transform: uppercase; letter-spacing: 0.5px; } 
+      strong { font-size: 13px; color: white; display: block; margin-top: 2px; line-height: 1.4; } 
+    } 
+  }
+
+  .card-middle-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .skill-tags { 
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; 
+    .tag { font-size: 11px; background: $neon-green-dim; color: $neon-green; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba($neon-green, 0.1); } 
+  }
+
+  .contact-lines { 
+    margin-bottom: 0;
+    .line { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      font-size: 12px; 
+      color: $text-label; 
+      margin-bottom: 7px; 
+      min-width: 0;
+
+      svg { 
+        color: $neon-green; 
+        opacity: 0.7; 
+        flex-shrink: 0;
+      } 
+
+      span { 
+        color: white; 
+        min-width: 0;
+        overflow-wrap: anywhere;
+      } 
+    }
+
+    .address-line {
+      align-items: flex-start;
+    }
+  }
+
+  .card-action-footer { 
+    display: flex; justify-content: space-between; border-top: 1px solid $border-color; padding-top: 15px; margin-top: 14px;
+    .btn-view-details { background: transparent; border: 1px solid $neon-green; color: $neon-green; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; &:hover { background: $neon-green-dim; } } 
+    .action-icons { display: flex; gap: 10px; .icon-btn { background: #232a33; border: 1px solid $border-color; color: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; &:hover { border-color: $neon-green; color: $neon-green; } &.delete:hover { border-color: $error-red; color: $error-red; } } } 
+  }
+}
+
+@media (max-width: 768px) {
+  .trainer-glory-grid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .compact-trainer-card {
+    min-height: auto;
+  }
+}
+
+// --- MODAL PREMIUM STYLING ---
+.modal-veil {
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0, 0, 0, 0.85); 
+  backdrop-filter: blur(8px); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1000; 
+  padding: 20px;
+}
+
+.modal-stage {
+  background: $modal-bg; 
+  border-radius: 24px; 
+  width: 100%; 
+  max-width: 950px; 
+  max-height: 92vh; 
+  overflow-y: auto; 
+  overflow-x: hidden; // NO HORIZONTAL SCROLL
+  border: 1px solid rgba($neon-green, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: $border-color; border-radius: 10px; }
+
+  .modal-header-premium {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 25px 35px; 
+    border-bottom: 1px solid $border-color; 
+    position: sticky; 
+    top: 0; 
+    background: $modal-bg; 
+    z-index: 10;
+
+    .header-text {
+      h3 { margin: 0; font-size: 22px; font-weight: 800; color: white; }
+      p { margin: 4px 0 0; color: $text-label; font-size: 14px; }
+    }
+
+    .close-stage-btn { 
+      background: rgba(255, 255, 255, 0.05); 
+      border: 1px solid $border-color; 
+      color: white; 
+      border-radius: 50%; 
+      width: 36px; height: 36px; 
+      cursor: pointer; 
+      display: grid; place-items: center;
+      transition: 0.2s;
+      &:hover { background: $error-red; border-color: $error-red; }
+    }
+  }
+
+  .premium-form {
+    padding: 30px 35px;
+
+    .form-sections-wrapper {
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 40px;
+      @media (max-width: 850px) { grid-template-columns: 1fr; gap: 30px; }
+    }
+
+    .section-title { 
+      color: $neon-green; 
+      font-size: 13px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 1.5px; 
+      border-bottom: 1px solid rgba($border-color, 0.6); 
+      padding-bottom: 10px; 
+      margin-bottom: 25px; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px;
+
+      &.mt-20 { margin-top: 35px; } 
+    }
+
+    .input-grid-row {
+      display: grid; 
+      gap: 20px; 
+      margin-bottom: 20px;
+      width: 100%;
+
+      &.single { grid-template-columns: 1fr; }
+      &.double { grid-template-columns: 1fr 1fr; }
+    }
+
+    .field-box {
+      display: flex; 
+      flex-direction: column;
+      
+      label { 
+        font-size: 11px; 
+        color: $text-label; 
+        text-transform: uppercase; 
+        font-weight: 700; 
+        margin-bottom: 8px; 
+        letter-spacing: 0.5px;
+      }
+
+      input, select, textarea {
+        background: $input-bg; 
+        border: 1px solid $border-color; 
+        color: white; 
+        padding: 12px 16px; 
+        border-radius: 10px; 
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box; // Critical for scroll fix
+        transition: all 0.2s ease;
+        
+        &:focus { border-color: $neon-green; outline: none; background: #000; box-shadow: 0 0 10px rgba($neon-green, 0.1); }
+        &::placeholder { color: rgba($text-label, 0.3); }
+      }
+      
+      textarea { height: 100px; resize: none; }
+      select { appearance: none; cursor: pointer; }
+      input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+    }
+
+    // --- Specialization Pills ---
+    .specialization-grid {
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+      gap: 10px; 
+      background: rgba(0, 0, 0, 0.2); 
+      padding: 15px; 
+      border-radius: 14px; 
+      border: 1px solid $border-color;
+
+      .spec-pill {
+        font-size: 12px; 
+        padding: 8px 10px; 
+        background: #0d1117; 
+        border: 1px solid $border-color; 
+        border-radius: 10px; 
+        text-align: center; 
+        cursor: pointer; 
+        color: $text-label; 
+        transition: 0.2s; 
+        display: flex; 
+        align-items: center; 
+        gap: 6px; 
+        justify-content: center;
+        user-select: none;
+
+        &.selected { 
+          background: $neon-green-dim; 
+          border-color: $neon-green; 
+          color: $neon-green; 
+          font-weight: 700;
+        }
+        &:hover:not(.selected) { border-color: $text-white; color: $text-white; }
+      }
+    }
+
+    // --- Image Upload Box (Left Aligned) ---
+    .premium-upload-box {
+      .upload-label {
+        display: flex; 
+        align-items: center; 
+        gap: 20px; 
+        border: 2px dashed $border-color; 
+        padding: 22px; 
+        border-radius: 14px; 
+        cursor: pointer; 
+        background: $input-bg;
+        transition: 0.3s;
+
+        &:hover { border-color: $neon-green; background: rgba($neon-green, 0.05); }
+
+        .text-area { 
+          span { display: block; font-size: 15px; font-weight: 700; color: white; } 
+          small { font-size: 12px; color: $text-label; margin-top: 4px; display: block; } 
+        }
+
+        svg { 
+          color: $neon-green; 
+          background: $neon-green-dim; 
+          padding: 12px; 
+          border-radius: 12px; 
+          width: 24px; height: 24px; 
+        }
+      }
+
+      .image-preview-zone {
+        display: flex; 
+        gap: 15px; 
+        margin-top: 20px;
+        flex-wrap: wrap;
+
+        .img-thumb-box { 
+          position: relative; 
+          width: 85px; height: 85px; 
+          border-radius: 12px; 
+          overflow: hidden; 
+          border: 2px solid $border-color;
+          background: #000;
+
+          img { width: 100%; height: 100%; object-fit: cover; }
+          
+          .remove-btn { 
+            position: absolute; 
+            top: 5px; right: 5px; 
+            background: rgba(0,0,0,0.8); 
+            border: none; color: white; 
+            border-radius: 50%; 
+            width: 24px; height: 24px;
+            cursor: pointer; 
+            display: grid; place-items: center;
+            &:hover { background: $error-red; }
+          }
+        }
+      }
+    }
+
+    // --- Footer Actions ---
+    .form-global-actions {
+      display: flex; 
+      justify-content: flex-end; 
+      gap: 15px; 
+      margin-top: 45px; 
+      padding-top: 25px; 
+      border-top: 1px solid $border-color;
+
+      button { 
+        padding: 14px 30px; 
+        border-radius: 12px; 
+        font-weight: 700; 
+        cursor: pointer; 
+        font-size: 15px; 
+        transition: all 0.2s; 
+      }
+
+      .action-cancel { 
+        background: transparent; 
+        color: white; 
+        border: 1px solid $border-color; 
+        &:hover { background: #232a33; border-color: $text-label; } 
+      }
+
+      .action-submit { 
+        background: $neon-green; 
+        color: #000; 
+        border: none; 
+        box-shadow: 0 4px 15px rgba($neon-green, 0.2);
+        &:hover { background: white; box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2); transform: translateY(-2px); } 
+        &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; } 
+      }
+    }
+  }
+}
+
+// --- LOADER & EMPTY STATES ---
+.loader-central { 
+  grid-column: 1/-1; 
+  text-align: center; 
+  padding: 80px 0; 
+  .spinner { 
+    border: 4px solid rgba($neon-green, 0.1); 
+    border-top-color: $neon-green; 
+    border-radius: 50%; 
+    width: 40px; height: 40px; 
+    animation: spin 1s linear infinite; 
+    margin: 0 auto 20px; 
+  } 
+  p { font-weight: 600; color: $text-label; }
+}
+
+.empty-state-card {
+  grid-column: 1/-1;
+  background: $card-bg;
+  border: 2px dashed $border-color;
+  border-radius: 20px;
+  padding: 60px;
+  text-align: center;
+  color: $text-label;
+  svg { color: rgba($text-label, 0.3); margin-bottom: 20px; }
+  h3 { color: white; margin: 0; }
+}
+
+.mini-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+
+  .mini-confirm-modal {
+    width: 100%;
+    max-width: 420px;
+    background: $modal-bg;
+    border: 1px solid rgba($error-red, 0.45);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+
+    h4 {
+      margin: 0 0 10px;
+      color: white;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    p {
+      margin: 0;
+      color: $text-label;
+      line-height: 1.5;
+
+      .highlight-name {
+        color: white;
+        font-weight: 700;
+      }
+    }
+
+    small {
+      display: block;
+      margin-top: 8px;
+      color: rgba($error-red, 0.9);
+      font-size: 12px;
+    }
+
+    .mini-confirm-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+
+      button {
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+
+      .mini-cancel-btn {
+        background: transparent;
+        color: white;
+        border-color: $border-color;
+
+        &:hover:not(:disabled) {
+          border-color: $text-label;
+          background: #1a1f26;
+        }
+      }
+
+      .mini-delete-btn {
+        background: $error-red;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #ff7070;
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+}
+
+// --- RESPONSIVE TUNING ---
+@media (max-width: 1400px) {
+  .trainer-dashboard {
+    padding: 2rem;
+  }
+
+  .trainer-glory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.4rem;
+  }
+
+  .compact-trainer-card {
+    min-height: 390px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .trainer-dashboard {
+    padding: 1.5rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 1.8rem;
+
+    .action-bar {
+      width: 100%;
+      justify-content: space-between;
+
+      .search-box {
+        flex: 1;
+
+        input {
+          width: 100%;
+          min-width: 0;
+        }
+      }
+    }
+  }
+
+  .trainer-glory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .modal-stage {
+    max-width: 880px;
+
+    .modal-header-premium {
+      padding: 20px 24px;
+    }
+
+    .premium-form {
+      padding: 24px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .trainer-dashboard {
+    padding: 1rem;
+  }
+
+  .dashboard-header {
+    margin-bottom: 1.2rem;
+    gap: 14px;
+
+    .title-section {
+      gap: 12px;
+
+      .icon-hub {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      p {
+        font-size: 12px;
+      }
+    }
+
+    .action-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+
+      .search-box {
+        width: 100%;
+
+        input {
+          width: 100%;
+        }
+      }
+
+      .prime-add-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  .trainer-glory-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .compact-trainer-card {
+    padding: 16px;
+    min-height: auto;
+
+    .card-top-header {
+      .avatar-shield {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+      }
+
+      .header-info .name-row h3 {
+        font-size: 15px;
+      }
+    }
+
+    .info-data-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .card-action-footer {
+      gap: 10px;
+      flex-wrap: wrap;
+
+      .btn-view-details {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+      }
+
+      .action-icons {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  }
+
+  .modal-veil {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .modal-stage {
+    max-height: 94vh;
+    border-radius: 16px 16px 0 0;
+
+    .modal-header-premium {
+      padding: 16px;
+
+      .header-text {
+        h3 {
+          font-size: 18px;
+        }
+
+        p {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .premium-form {
+      padding: 16px;
+
+      .input-grid-row {
+        gap: 12px;
+        margin-bottom: 12px;
+
+        &.double {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .specialization-grid {
+        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+      }
+
+      .premium-upload-box {
+        .upload-label {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 14px;
+        }
+      }
+
+      .form-global-actions {
+        margin-top: 24px;
+        padding-top: 16px;
+        flex-direction: column-reverse;
+        gap: 10px;
+
+        button {
+          width: 100%;
+          padding: 12px 16px;
+        }
+      }
+    }
+  }
+
+  .empty-state-card {
+    padding: 34px 18px;
+
+    h3 {
+      font-size: 18px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .trainer-dashboard {
+    padding: 0.85rem;
+  }
+
+  .dashboard-header {
+    .title-section {
+      h1 {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .compact-trainer-card {
+    padding: 14px;
+
+    .contact-lines .line {
+      font-size: 11px;
+    }
+  }
+
+  .mini-confirm-overlay {
+    padding: 10px;
+
+    .mini-confirm-modal {
+      padding: 16px;
+
+      h4 {
+        font-size: 17px;
+      }
+
+      .mini-confirm-actions {
+        flex-direction: column;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

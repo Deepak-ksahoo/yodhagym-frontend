@@ -1,0 +1,433 @@
+.billing-page {
+  --billing-bg: #0b0f16;
+  --billing-card: #141a24;
+  --billing-border: rgba(255, 255, 255, 0.08);
+  --billing-muted: #9aa6b8;
+  --billing-accent: #6b77ff;
+  --billing-accent-2: #3bffe1;
+  min-height: 100vh;
+  padding: 1.8rem 2rem 2.6rem;
+  color: #eef2f8;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(900px 600px at 5% 0%, rgba(107, 119, 255, 0.16), transparent 55%),
+    radial-gradient(700px 500px at 90% 10%, rgba(59, 255, 225, 0.12), transparent 55%),
+    var(--billing-bg);
+}
+
+.billing-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.billing-title {
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 0.35rem;
+}
+
+.billing-subtitle {
+  margin: 0;
+  color: var(--billing-muted);
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(107, 119, 255, 0.5);
+  background: rgba(107, 119, 255, 0.16);
+  color: #c6caff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.billing-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 1.6rem;
+}
+
+.stat-card {
+  background: var(--billing-card);
+  border: 1px solid var(--billing-border);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+
+  span {
+    display: block;
+    color: var(--billing-muted);
+    font-size: 0.85rem;
+  }
+
+  strong {
+    font-size: 1.4rem;
+  }
+}
+
+.stat-icon {
+  height: 40px;
+  width: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c6caff;
+}
+
+.billing-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+  gap: 1rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--billing-border);
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 280px;
+
+  input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #eef3fb;
+    width: 100%;
+  }
+}
+
+.toolbar-meta {
+  color: var(--billing-muted);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.table-shell {
+  background: var(--billing-card);
+  border: 1px solid var(--billing-border);
+  border-radius: 16px;
+  padding: 0.4rem;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  overflow: visible;
+}
+
+.loader-box,
+.empty-state {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loader-box {
+  color: var(--billing-muted);
+
+  .spinner {
+    animation: spin 1s linear infinite;
+    color: var(--billing-accent);
+    margin-bottom: 0.8rem;
+  }
+}
+
+.empty-state {
+  color: var(--billing-muted);
+
+  strong {
+    display: block;
+    color: #eef2f8;
+    margin-bottom: 0.35rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.billing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  table-layout: fixed;
+
+  thead {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  th {
+    text-align: left;
+    padding: 1rem 1.1rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--billing-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  td {
+    padding: 1rem 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 22%;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) { width: 18%; }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 18%;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  th:nth-child(4),
+  td:nth-child(4) { width: 16%; }
+
+  th:nth-child(5),
+  td:nth-child(5) { width: 16%; }
+
+  th:nth-child(6),
+  td:nth-child(6) { width: 11%; text-align: center; }
+
+  th:nth-child(7),
+  td:nth-child(7) { width: 10%; text-align: center; overflow: visible; }
+}
+
+.stacked-cell {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+
+  strong,
+  small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  strong {
+    color: #f5f8ff;
+    font-size: 0.84rem;
+    word-break: break-word;
+  }
+
+  small {
+    color: var(--billing-muted);
+    font-size: 0.72rem;
+    word-break: break-word;
+  }
+}
+
+.billing-id-cell,
+.plan-cell {
+  min-width: 0;
+}
+
+.amount-cell {
+  align-items: end;
+}
+
+.plan-empty {
+  color: var(--billing-muted);
+  font-size: 0.84rem;
+}
+
+.billing-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: center;
+  min-width: 84px;
+}
+
+.action-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef2f8;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.25s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &.download:hover {
+    background: rgba(59, 255, 225, 0.16);
+    border-color: rgba(59, 255, 225, 0.35);
+    color: #c8fff6;
+  }
+
+  &.share:hover {
+    background: rgba(107, 119, 255, 0.16);
+    border-color: rgba(107, 119, 255, 0.35);
+    color: #d0d4ff;
+  }
+}
+
+.plan-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: rgba(109, 242, 255, 0.15);
+  color: #c9f7ff;
+  border: 1px solid rgba(109, 242, 255, 0.45);
+}
+
+.plan-tag.gold {
+  background: rgba(255, 210, 90, 0.15);
+  color: #ffe7b0;
+  border-color: rgba(255, 210, 90, 0.45);
+}
+
+.plan-tag.yearly {
+  background: rgba(55, 255, 139, 0.15);
+  color: #c7ffe2;
+  border-color: rgba(55, 255, 139, 0.4);
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(109, 242, 255, 0.15);
+  color: #c9f7ff;
+  border: 1px solid rgba(109, 242, 255, 0.45);
+}
+
+.status-tag.paid {
+  background: rgba(55, 255, 139, 0.15);
+  color: #c7ffe2;
+  border-color: rgba(55, 255, 139, 0.4);
+}
+
+.status-tag.failed {
+  background: rgba(255, 77, 77, 0.2);
+  color: #ffb7b7;
+  border-color: rgba(255, 77, 77, 0.45);
+}
+
+@media (max-width: 1024px) {
+  .billing-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .billing-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-shell {
+    overflow-x: auto;
+  }
+
+  .billing-table {
+    min-width: 940px;
+  }
+}
+
+@media (max-width: 640px) {
+  .billing-page {
+    padding: 1.3rem 1.2rem 2rem;
+  }
+
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.pagination {
+  margin-top: 1.2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.nav-btn,
+.page-num {
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--billing-border);
+  background: var(--billing-card);
+  color: #eef2f8;
+  cursor: pointer;
+  min-width: 40px;
+
+  &.active {
+    background: var(--billing-accent);
+    border-color: var(--billing-accent);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

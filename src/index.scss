@@ -1,0 +1,61 @@
+:root {
+  --yodha-red: #dc2626;
+  --yodha-red-hover: #b91c1c;
+  --yodha-dark: #0a0a0a;
+  --yodha-dark-card: #171717;
+  --yodha-light: #ffffff;
+  --yodha-gray: #9ca3af;
+  --yodha-border: #262626;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--yodha-dark);
+  color: var(--yodha-light);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input { font-family: inherit; outline: none; }
+
+::selection {
+  background-color: var(--yodha-red);
+  color: var(--yodha-light);
+}
+
+.p-10 { padding: 40px; }
+.min-h-screen { min-height: 100vh; }
+.text-red { color: var(--yodha-red); }
+
+@media (max-width: 1024px) {
+  .p-10 {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .p-10 {
+    padding: 16px;
+  }
+}
