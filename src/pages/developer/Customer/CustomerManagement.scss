@@ -1,18 +1,18 @@
 .customer-page {
-  --customer-bg: #0b0f14;
-  --customer-card: #141a22;
-  --customer-border: rgba(255, 255, 255, 0.08);
-  --customer-muted: #9aa5b5;
-  --customer-accent: #ff4d4d;
-  --customer-accent-2: #3dd8ff;
+  --customer-bg: #0d1424;
+  --customer-card: #162036;
+  --customer-border: rgba(120, 160, 255, 0.18);
+  --customer-muted: #a6b3c8;
+  --customer-accent: #ff5a68;
+  --customer-accent-2: #4aa7ff;
   
   min-height: 100vh;
   padding: 1.8rem 2rem;
   color: #edf1f7;
   font-family: 'Space Grotesk', sans-serif;
-  background: 
-    radial-gradient(circle at 10% 10%, rgba(255, 77, 77, 0.08), transparent 40%),
-    radial-gradient(circle at 90% 90%, rgba(61, 216, 255, 0.08), transparent 40%),
+  background:
+    radial-gradient(circle at 12% 12%, rgba(74, 167, 255, 0.16), transparent 45%),
+    radial-gradient(circle at 88% 88%, rgba(255, 90, 104, 0.12), transparent 42%),
     var(--customer-bg);
 
   .customer-header {
@@ -77,52 +77,52 @@
 
   .customer-table {
     width: 100%;
-    min-width: 1040px;
+    min-width: 880px;
     border-collapse: collapse;
     table-layout: fixed;
 
     th {
       padding: 1rem 0.85rem;
-      background: rgba(255,255,255,0.02);
+      background: rgba(255,255,255,0.035);
       text-align: left;
-      color: var(--customer-muted);
+      color: #c4d0e6;
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      border-bottom: 1px solid rgba(120, 160, 255, 0.12);
     }
 
     td {
       padding: 0.9rem 0.85rem;
       border-top: 1px solid var(--customer-border);
       vertical-align: middle;
+      color: #eef3fb;
+    }
+
+    tbody tr:hover td {
+      background: rgba(74, 167, 255, 0.06);
     }
 
     th:nth-child(1),
-    td:nth-child(1) { width: 21%; text-align: left; }
+    td:nth-child(1) { width: 26%; text-align: left; }
 
     th:nth-child(2),
-    td:nth-child(2) { width: 13%; text-align: center; }
+    td:nth-child(2) { width: 14%; text-align: center; }
 
     th:nth-child(3),
-    td:nth-child(3) { width: 10%; text-align: center; }
+    td:nth-child(3) { width: 24%; text-align: left; }
 
     th:nth-child(4),
-    td:nth-child(4) { width: 11%; text-align: center; }
+    td:nth-child(4) { width: 14%; text-align: center; }
 
     th:nth-child(5),
-    td:nth-child(5) { width: 17%; text-align: center; }
+    td:nth-child(5) { width: 11%; text-align: center; }
 
     th:nth-child(6),
-    td:nth-child(6) { width: 10%; text-align: center; }
-
-    th:nth-child(7),
-    td:nth-child(7) { width: 9%; text-align: center; }
-
-    th:nth-child(8),
-    td:nth-child(8) { width: 9%; text-align: center; }
+    td:nth-child(6) { width: 11%; text-align: center; }
     
     .member-cell {
       display: flex;
@@ -158,9 +158,16 @@
       border-radius: 20px;
       font-size: 0.7rem;
       font-weight: bold;
-      border: 1px solid rgba(61, 216, 255, 0.3);
+      border: 1px solid rgba(124, 200, 255, 0.25);
+      background: rgba(124, 200, 255, 0.08);
+      color: #cfe6ff;
       &.standard { color: #3dd8ff; background: rgba(61, 216, 255, 0.1); }
       &.warrior { color: #ff9f1a; background: rgba(255, 159, 26, 0.1); border-color: #ff9f1a; }
+      &.monthly { color: #7cc8ff; background: rgba(124, 200, 255, 0.12); border-color: rgba(124, 200, 255, 0.28); }
+      &.quarterly { color: #7bd9c2; background: rgba(123, 217, 194, 0.12); border-color: rgba(123, 217, 194, 0.28); }
+      &.half-yr { color: #ffd166; background: rgba(255, 209, 102, 0.12); border-color: rgba(255, 209, 102, 0.3); }
+      &.annual { color: #7ee787; background: rgba(126, 231, 135, 0.12); border-color: rgba(126, 231, 135, 0.28); }
+      &.unknown { color: #c8d4e8; background: rgba(200, 212, 232, 0.1); border-color: rgba(200, 212, 232, 0.25); }
     }
 
     .status-tag {
@@ -191,7 +198,8 @@
     .plan-dates {
       display: grid;
       gap: 3px;
-      justify-items: center;
+      justify-items: start;
+      text-align: left;
       small {
         display: block;
         color: #d8dfeb;
@@ -265,10 +273,20 @@
       gap: 8px;
       justify-content: center;
       button { 
-        padding: 6px; border-radius: 8px; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: #fff;
-        &.danger:hover { background: var(--customer-accent); }
-        &.activate:hover { background: rgba(0, 255, 136, 0.2); }
-        &:hover { background: rgba(255,255,255,0.2); }
+        padding: 7px;
+        border-radius: 10px;
+        border: 1px solid rgba(120, 160, 255, 0.18);
+        cursor: pointer;
+        background: rgba(74, 167, 255, 0.08);
+        color: #e7efff;
+        transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        &.ghost { background: rgba(74, 167, 255, 0.08); }
+        &.danger { background: rgba(255, 90, 104, 0.1); border-color: rgba(255, 90, 104, 0.3); color: #ffd1d6; }
+        &.activate { background: rgba(0, 255, 136, 0.1); border-color: rgba(0, 255, 136, 0.28); color: #b9fdd9; }
+        &:hover { background: rgba(74, 167, 255, 0.18); border-color: rgba(124, 200, 255, 0.4); }
+        &.danger:hover { background: rgba(255, 90, 104, 0.2); }
+        &.activate:hover { background: rgba(0, 255, 136, 0.18); }
+        &:active { transform: translateY(1px); }
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
     }
@@ -357,23 +375,24 @@
   .add-member-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(5, 9, 15, 0.72);
+    background: rgba(10, 18, 34, 0.72);
     z-index: 1100;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    backdrop-filter: blur(6px);
   }
 
   .add-member-modal {
-    width: min(1240px, 98vw);
+    width: min(1080px, 96vw);
     max-height: 90vh;
     overflow: auto;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: linear-gradient(155deg, #161f2b, #101722);
+    border: 1px solid rgba(120, 160, 255, 0.22);
+    background: linear-gradient(165deg, #1b2844, #111a2f);
     padding: 1rem;
-    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 24px 58px rgba(6, 12, 24, 0.6);
   }
 
   .edit-member-overlay {
@@ -682,14 +701,17 @@
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    align-items: flex-start;
-    margin-bottom: 0.8rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(120, 160, 255, 0.16);
 
     h3 {
       margin: 0;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
+      color: #f2f6ff;
     }
 
     p {
@@ -724,29 +746,30 @@
   .add-form-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8rem;
+    gap: 0.9rem;
+    align-items: start;
   }
 
   .form-field {
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(120, 160, 255, 0.16);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.04);
     padding: 0.7rem;
     display: grid;
     gap: 0.4rem;
     color: #d9e3f3;
     font-size: 0.8rem;
-    min-height: 82px;
+    min-height: 76px;
 
     input,
     select {
       width: 100%;
-      height: 42px;
+      height: 40px;
       line-height: 1.2;
       box-sizing: border-box;
       border-radius: 9px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(148, 176, 255, 0.26);
+      background: rgba(9, 15, 28, 0.7);
       color: #f3f8ff;
       padding: 0.5rem 0.6rem;
       font-size: 0.84rem;
@@ -771,7 +794,7 @@
     }
 
     input[readonly] {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(9, 15, 28, 0.45);
       border-style: dashed;
       color: #d6deeb;
     }
@@ -845,8 +868,8 @@
 
     input:focus,
     select:focus {
-      border-color: rgba(61, 216, 255, 0.52);
-      box-shadow: 0 0 0 2px rgba(61, 216, 255, 0.16);
+      border-color: rgba(74, 167, 255, 0.6);
+      box-shadow: 0 0 0 2px rgba(74, 167, 255, 0.18);
     }
   }
 
@@ -894,7 +917,7 @@
     }
 
     .customer-table {
-      min-width: 960px;
+      min-width: 820px;
     }
   }
 }

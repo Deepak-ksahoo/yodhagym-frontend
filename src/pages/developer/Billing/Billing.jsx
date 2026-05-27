@@ -4,6 +4,7 @@ import { Search, Receipt, Download, Share2, BadgeCheck, Clock, Wallet, Loader2, 
 import { toast } from 'react-toastify';
 import './Billing.scss';
 import { useAuth } from '../../../context/AuthContext';
+import { deleteCloudinaryAssetByToken, uploadFileToCloudinary } from '../../../utils/uploadFileToCloudinary';
 
 const BILLINGS_API = '/api/billings/getallbilling';
 const PLANS_API = '/api/plans/getallplans';
@@ -84,6 +85,101 @@ const getMemberContact = (item) => {
     || 'N/A';
 };
 
+const sanitizePhoneNumber = (value) => {
+  if (!value) return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+  if (digits.length === 10) return `91${digits}`;
+  return digits;
+};
+
+const CLOUDINARY_CLEANUP_STORAGE_KEY = 'yodha_cloudinary_cleanup_v1';
+const CLOUDINARY_DELETE_TTL_MS = 24 * 60 * 60 * 1000;
+
+const loadCloudinaryCleanupQueue = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CLOUDINARY_CLEANUP_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCloudinaryCleanupQueue = (queue) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CLOUDINARY_CLEANUP_STORAGE_KEY, JSON.stringify(queue));
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+const addCloudinaryCleanupItem = (token, expiresAt) => {
+  if (!token) return;
+  const queue = loadCloudinaryCleanupQueue();
+  queue.push({ token, expiresAt });
+  saveCloudinaryCleanupQueue(queue);
+};
+
+const removeCloudinaryCleanupItem = (token) => {
+  if (!token) return;
+  const queue = loadCloudinaryCleanupQueue();
+  const nextQueue = queue.filter((item) => item?.token !== token);
+  saveCloudinaryCleanupQueue(nextQueue);
+};
+
+const cleanupExpiredCloudinaryAssets = async () => {
+  const queue = loadCloudinaryCleanupQueue();
+  if (!queue.length) return;
+  const now = Date.now();
+  const expired = queue.filter((item) => item?.token && item?.expiresAt && item.expiresAt <= now);
+  const pending = queue.filter((item) => !item?.expiresAt || item.expiresAt > now);
+
+  if (!expired.length) return;
+
+  const results = await Promise.all(
+    expired.map((item) => deleteCloudinaryAssetByToken(item.token))
+  );
+  const failed = expired.filter((_, index) => !results[index]);
+  saveCloudinaryCleanupQueue([...pending, ...failed]);
+};
+
+const scheduleCloudinaryDelete = (deleteToken, ttlMs = CLOUDINARY_DELETE_TTL_MS) => {
+  if (!deleteToken || typeof window === 'undefined') return;
+  const expiresAt = Date.now() + ttlMs;
+  addCloudinaryCleanupItem(deleteToken, expiresAt);
+  setTimeout(async () => {
+    const deleted = await deleteCloudinaryAssetByToken(deleteToken);
+    if (deleted) {
+      removeCloudinaryCleanupItem(deleteToken);
+    }
+  }, ttlMs);
+};
+
+const getPaymentId = (item) => {
+  if (item?.paymentId && typeof item.paymentId === 'object') {
+    return item.paymentId?._id || item.paymentId?.id || '';
+  }
+  if (item?.payment && typeof item.payment === 'object') {
+    return item.payment?._id || item.payment?.id || '';
+  }
+  if (item?.paymentId && typeof item.paymentId === 'string') {
+    return item.paymentId;
+  }
+  return '';
+};
+
+const toSafeCloudinaryId = (value) => {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 const getPlanName = (item) => {
   return item?.planId?.planName
     || item?.plan?.planName
@@ -112,21 +208,30 @@ const getBillingAmount = (item) => {
   return toNumber(
     item?.grandTotal
     ?? item?.totalBillAmount
-    ?? item?.amountPaid
     ?? item?.subTotal
+    ?? item?.totalAmount
+    ?? item?.amountPaid
+    ?? 0
+  );
+};
+
+const getBillingPaidAmount = (item) => {
+  return toNumber(
+    item?.amountPaid
+    ?? item?.paidAmount
+    ?? item?.subTotal
+    ?? item?.grandTotal
+    ?? item?.totalBillAmount
     ?? item?.totalAmount
     ?? 0
   );
 };
 
-const getBillingDue = (item) => {
-  return toNumber(item?.dueAmount ?? item?.pendingAmount ?? 0);
-};
-
 const getBillingStatus = (item) => {
   const raw = String(item?.paymentStatus || item?.status || '').toUpperCase();
-  const dueAmount = getBillingDue(item);
-  const isPaid = raw ? ['PAID', 'COMPLETED', 'SUCCESS'].includes(raw) : dueAmount <= 0;
+  const totalBill = getBillingAmount(item);
+  const paidAmount = getBillingPaidAmount(item);
+  const isPaid = raw ? ['PAID', 'COMPLETED', 'SUCCESS'].includes(raw) : paidAmount >= totalBill;
   return {
     label: isPaid ? 'PAID' : 'DUE',
     className: isPaid ? 'paid' : 'due',
@@ -137,16 +242,16 @@ const buildShareText = (item, index) => {
   const billingId = getBillingId(item, index);
   const memberName = getMemberName(item);
   const planName = getPlanName(item);
-  const amount = formatMoney(getBillingAmount(item));
-  const due = formatMoney(getBillingDue(item));
+  const totalPayable = formatMoney(getBillingAmount(item));
+  const paidAmount = formatMoney(getBillingPaidAmount(item));
   const date = formatDate(item?.billingDate || item?.paymentDate || item?.createdAt);
 
   return [
     `Billing ID: ${billingId}`,
     `Member: ${memberName}`,
     `Plan: ${planName}`,
-    `Amount: ${amount}`,
-    `Due: ${due}`,
+    `Total Payable: ${totalPayable}`,
+    `Paid Amount: ${paidAmount}`,
     `Date: ${date}`,
   ].join('\n');
 };
@@ -233,6 +338,10 @@ const Billing = () => {
   }, [fetchBillings, meta.currentPage]);
 
   useEffect(() => {
+    cleanupExpiredCloudinaryAssets();
+  }, []);
+
+  useEffect(() => {
     const fetchPlans = async () => {
       try {
         const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
@@ -295,46 +404,124 @@ const Billing = () => {
   const stats = useMemo(() => {
     const totalRecords = billings.length;
     const paidRecords = billings.filter((item) => getBillingStatus(item).className === 'paid').length;
-    const pendingRecords = Math.max(totalRecords - paidRecords, 0);
     const totalAmount = billings.reduce((sum, item) => sum + getBillingAmount(item), 0);
 
     return [
       { label: 'Total Bills', value: String(totalRecords), icon: <Receipt size={18} /> },
       { label: 'Collected', value: formatMoney(totalAmount), icon: <Wallet size={18} /> },
-      { label: 'Pending', value: String(pendingRecords), icon: <Clock size={18} /> },
+      { label: 'Completed', value: String(paidRecords), icon: <BadgeCheck size={18} /> },
     ];
   }, [billings]);
 
-  const handleDownload = (item, index) => {
-    const billingId = getBillingId(item, index);
-    const fileContent = `${buildShareText(item, index)}\n`;
-    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${billingId}.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-    toast.success('Billing record downloaded.');
+  const fetchReceiptBlob = async (item) => {
+    const paymentId = getPaymentId(item);
+    if (!paymentId) {
+      toast.error('Linked Payment ID not found for this billing record.');
+      return null;
+    }
+
+    const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
+    if (!authToken) {
+      toast.error('Missing auth token. Please login again.');
+      return null;
+    }
+
+    try {
+      const response = await api.post(
+        '/api/payment/receipt',
+        { paymentId: String(paymentId) },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          responseType: 'blob',
+        }
+      );
+
+      const contentType = response?.headers?.['content-type'] || 'application/pdf';
+      if (response.data instanceof Blob) {
+        return response.data.type ? response.data : new Blob([response.data], { type: contentType });
+      }
+      return new Blob([response.data], { type: contentType });
+    } catch (error) {
+      console.error('Billing receipt error:', error);
+      toast.error(error?.response?.data?.message || 'Failed to download receipt from server.');
+      return null;
+    }
+  };
+
+  const handleDownload = async (item, index) => {
+    try {
+      toast.info('Downloading receipt...');
+      const receiptBlob = await fetchReceiptBlob(item);
+      if (!receiptBlob) return;
+
+      const url = URL.createObjectURL(receiptBlob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Billing ID ko file ka naam de dete hain (e.g., INVOICE-1234.pdf)
+      const billingId = getBillingId(item, index);
+      link.download = `receipt-${billingId.toLowerCase()}.pdf`;
+
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Receipt downloaded successfully.');
+    } catch (error) {
+      console.error('Billing download error:', error);
+      toast.error('Failed to download receipt from server.');
+    }
   };
 
   const handleShare = async (item, index) => {
     const shareText = buildShareText(item, index);
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: getBillingId(item, index),
-          text: shareText,
-        });
-        return;
-      } catch {
-        // User cancelled share.
-        return;
-      }
+    const rawNumber = getMemberContact(item);
+    const phoneNumber = sanitizePhoneNumber(rawNumber);
+
+    if (!phoneNumber) {
+      toast.error('Member phone number not available.');
+      return;
     }
 
-    await navigator.clipboard.writeText(shareText);
-    toast.success('Billing details copied to clipboard.');
+    await cleanupExpiredCloudinaryAssets();
+
+    toast.info('Preparing receipt link...');
+    const receiptBlob = await fetchReceiptBlob(item);
+    if (!receiptBlob) return;
+
+    const billingId = getBillingId(item, index);
+    const safeBillingId = toSafeCloudinaryId(billingId) || `bill-${Date.now()}`;
+    const receiptFileName = `receipt-${safeBillingId}.pdf`;
+    const receiptFile = new File([receiptBlob], receiptFileName, {
+      type: receiptBlob.type || 'application/pdf',
+    });
+
+    const uploadResult = await uploadFileToCloudinary(receiptFile, {
+      folder: 'billing/receipts',
+      publicId: `${safeBillingId}-${Date.now()}`,
+      tags: 'billing,receipt',
+      resourceType: 'auto',
+      returnDeleteToken: false,
+    });
+
+    if (!uploadResult?.url) {
+      toast.error(uploadResult?.error || 'Failed to upload receipt to Cloudinary.');
+      return;
+    }
+
+    if (uploadResult.deleteToken) {
+      scheduleCloudinaryDelete(uploadResult.deleteToken);
+    }
+
+    const message = `${shareText}\nReceipt: ${uploadResult.url}`;
+    const shareUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    const opened = window.open(shareUrl, '_blank');
+    if (opened) {
+      opened.opener = null;
+      return;
+    }
+    window.location.href = shareUrl;
   };
 
   return (
@@ -393,7 +580,7 @@ const Billing = () => {
                 <th>Member</th>
                 <th>Plan</th>
                 <th>Date</th>
-                <th>Amount</th>
+                <th>Total / Paid</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -416,7 +603,7 @@ const Billing = () => {
                   const receiptId = getReadableReceipt(paymentObj, index, meta.currentPage, meta.pageSize);
                   const status = getBillingStatus(item);
                   const amount = getBillingAmount(item);
-                  const dueAmount = getBillingDue(item);
+                  const paidAmount = getBillingPaidAmount(item);
                   const paymentMethod = String(item?.paymentMethod || 'N/A').toUpperCase();
                   const planId = getPlanId(item);
                   const planName = getPlanDisplayName(item, planMap);
@@ -448,13 +635,12 @@ const Billing = () => {
                       <td>
                         <div className="stacked-cell">
                           <strong>{formatDate(item?.billingDate || item?.paymentDate || item?.createdAt)}</strong>
-                          {dueAmount > 0 ? <small>Due: {formatMoney(dueAmount)}</small> : <small>&nbsp;</small>}
                         </div>
                       </td>
                       <td>
                         <div className="stacked-cell amount-cell">
                           <strong>{formatMoney(amount)}</strong>
-                          {dueAmount > 0 ? <small>Balance: {formatMoney(dueAmount)}</small> : <small>&nbsp;</small>}
+                          <small>Paid: {formatMoney(paidAmount)}</small>
                         </div>
                       </td>
                       <td>

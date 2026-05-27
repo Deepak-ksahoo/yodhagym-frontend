@@ -271,10 +271,18 @@ const Payments = () => {
       const planName = planObj?.planName || planObj?.name || item?.planName || 'N/A';
       const method = String(item?.paymentMethod || item?.method || 'N/A').toUpperCase();
       const rawStatus = String(item?.paymentStatus || item?.status || '').toUpperCase();
+      const totalBillAmount = toNumber(
+        item?.totalBillAmount
+        ?? item?.grandTotal
+        ?? item?.totalAmount
+        ?? item?.amountPaid
+        ?? item?.paidAmount
+        ?? 0
+      );
       const dueAmount = toNumber(item?.dueAmount ?? item?.pendingAmount ?? 0);
       const amountPaid = toNumber(item?.amountPaid ?? item?.paidAmount ?? item?.amount ?? 0);
 
-      const status = rawStatus || (dueAmount > 0 ? 'PENDING' : 'COMPLETED');
+      const status = rawStatus || 'COMPLETED';
       const paymentDate = normalizeDate(item?.paymentDate || item?.createdAt || item?.updatedAt);
       const planStartDate = normalizeDate(item?.planStartDate);
       const planEndDate = normalizeDate(item?.planEndDate);
@@ -289,6 +297,7 @@ const Payments = () => {
         paymentDate,
         planStartDate,
         planEndDate,
+        totalBillAmount,
         amountPaid,
         dueAmount,
         status,
@@ -342,12 +351,22 @@ const Payments = () => {
     const computedPlanFee = String(toNumber(selectedPlan.price));
 
     setAddForm((prev) => {
-      if (prev.planEndDate === computedPlanEnd && prev.planFee === computedPlanFee) return prev;
-      return {
-        ...prev,
-        planEndDate: computedPlanEnd,
-        planFee: computedPlanFee,
-      };
+      let hasChange = false;
+      const next = { ...prev };
+
+      if (prev.planEndDate !== computedPlanEnd) {
+        next.planEndDate = computedPlanEnd;
+        hasChange = true;
+      }
+
+      if (!prev.planFee || prev.planFee === computedPlanFee) {
+        if (prev.planFee !== computedPlanFee) {
+          next.planFee = computedPlanFee;
+          hasChange = true;
+        }
+      }
+
+      return hasChange ? next : prev;
     });
   }, [addForm.planStartDate, selectedPlan, showAddModal]);
 
@@ -459,19 +478,6 @@ const Payments = () => {
   };
 
   const handleCustomerSelect = (option) => {
-    if (option.pendingDue > 0) {
-      toast.error('Please clear your pending due before creating a new payment.', {
-        toastId: DUE_MEMBER_TOAST_ID,
-      });
-      setCustomerQuery('');
-      setAddForm((prev) => ({
-        ...prev,
-        memberId: '',
-      }));
-      setShowCustomerMenu(false);
-      return;
-    }
-
     setCustomerQuery(`${option.name} (${option.number})`);
     setAddForm((prev) => ({
       ...prev,
@@ -498,11 +504,8 @@ const Payments = () => {
       planStartDate: toIsoDateStart(addForm.planStartDate),
       planEndDate: toIsoDateStart(addForm.planEndDate),
       planFee: toNumber(addForm.planFee),
-      amountPaid,
-      dueAmount,
       paymentMethod: String(addForm.paymentMethod).toUpperCase(),
       paymentDate: toIsoDateStart(addForm.paymentDate),
-      tax: toNumber(addForm.tax),
     };
 
     try {
@@ -587,8 +590,8 @@ const Payments = () => {
                   <th>Method</th>
                   <th>Payment Date</th>
                   <th>Plan Date</th>
-                  <th>Amount</th>
-                  <th>Due</th>
+                  <th>Total Payable</th>
+                  <th>Paid Amount</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -613,15 +616,15 @@ const Payments = () => {
                         </div>
                       </td>
                       <td>
-                        <div className="money-cell" title={formatMoney(row.amountPaid)}>
-                          <strong>{formatMoney(row.amountPaid)}</strong>
-                          <small>{formatMoneyCompact(row.amountPaid)}</small>
+                        <div className="money-cell" title={formatMoney(row.totalBillAmount)}>
+                          <strong>{formatMoney(row.totalBillAmount)}</strong>
+                          <small>{formatMoneyCompact(row.totalBillAmount)}</small>
                         </div>
                       </td>
                       <td>
-                        <div className="money-cell" title={formatMoney(row.dueAmount)}>
-                          <strong>{formatMoney(row.dueAmount)}</strong>
-                          <small>{formatMoneyCompact(row.dueAmount)}</small>
+                        <div className="money-cell" title={formatMoney(row.amountPaid)}>
+                          <strong>{formatMoney(row.amountPaid)}</strong>
+                          <small>{formatMoneyCompact(row.amountPaid)}</small>
                         </div>
                       </td>
                       <td>
@@ -697,12 +700,11 @@ const Payments = () => {
                           <button
                             type="button"
                             key={option.id}
-                            className={`searchable-option ${option.pendingDue > 0 ? 'has-due' : ''}`}
+                            className="searchable-option"
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => handleCustomerSelect(option)}
                           >
                             <span>{option.name} ({option.number})</span>
-                            {option.pendingDue > 0 && <small>Due: {formatMoney(option.pendingDue)}</small>}
                           </button>
                         ))
                       ) : (
@@ -737,22 +739,7 @@ const Payments = () => {
 
               <label className="modal-field">
                 Plan Fee*
-                <input name="planFee" type="number" value={addForm.planFee} readOnly onWheel={handleNumberWheel} />
-              </label>
-
-              <label className="modal-field">
-                Tax
-                <input name="tax" type="number" value={addForm.tax} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
-              </label>
-
-              <label className="modal-field">
-                Amount Paid*
-                <input name="amountPaid" type="number" value={amountPaid} readOnly onWheel={handleNumberWheel} />
-              </label>
-
-              <label className="modal-field">
-                Due Amount
-                <input name="dueAmount" type="number" value={addForm.dueAmount} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
+                <input name="planFee" type="number" value={addForm.planFee} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
               </label>
 
               <label className="modal-field">

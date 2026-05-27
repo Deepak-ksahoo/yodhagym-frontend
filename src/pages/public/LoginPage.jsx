@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../../utils/api';
 
 const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
-  const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
@@ -19,7 +19,7 @@ const LoginPage = () => {
     const isEmail = identifier.includes('@');
     const payload = isEmail ? { email: identifier } : { number: identifier };
     if (withOtp) {
-      payload.otp = otp;
+      payload.otp = password;
     }
     return payload;
   };
@@ -45,9 +45,9 @@ const LoginPage = () => {
 
       if (response.ok && result.success !== false) {
         setOtpSent(true);
-        toast.success(result.message || 'OTP sent successfully!');
+        toast.success(result.message || 'Request successful.');
       } else {
-        let errorMsg = result.message || 'Failed to send OTP.';
+        let errorMsg = result.message || 'Request failed.';
         if (errorMsg.toLowerCase().includes('not found')) {
           errorMsg = 'No active system access found for these credentials. Please contact administration.';
         }
@@ -63,12 +63,8 @@ const LoginPage = () => {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    if (!otp) {
-      toast.warning('Please enter the OTP.');
-      return;
-    }
-    if (otp.length < 4) {
-      toast.warning('OTP must be at least 4 digits.');
+    if (!password) {
+      toast.warning('Please enter the password.');
       return;
     }
 
@@ -96,7 +92,7 @@ const LoginPage = () => {
         else navigate('/member/dashboard');
         
       } else {
-        toast.error(result.message || "Invalid OTP or Access Denied!");
+        toast.error(result.message || 'Invalid password or Access Denied!');
       }
     } catch (err) {
       console.error("OTP verify error:", err);
@@ -119,9 +115,9 @@ const LoginPage = () => {
         <h2>System <span>Access</span></h2>
         
         {!otpSent ? (
-          <p>Enter your Email or Phone to receive an OTP.</p>
+          <p>Enter your Email or Phone to continue.</p>
         ) : (
-          <p>We've sent a secure OTP to your contact.</p>
+          <p>Enter your password to continue.</p>
         )}
 
         {!otpSent ? (
@@ -143,7 +139,7 @@ const LoginPage = () => {
             <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? <Loader2 className="animate-spin" size={24} style={{ display: 'inline' }} /> : (
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                  <Send size={18} /> Get OTP
+                  <Send size={18} /> Continue
                 </span>
               )}
             </button>
@@ -152,10 +148,10 @@ const LoginPage = () => {
           <form onSubmit={handleVerifyOTP}>
             <div className="input-group">
               <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Verification Code</span>
+                <span>Password</span>
                 <button 
                   type="button" 
-                  onClick={() => { setOtpSent(false); setOtp(''); }}
+                  onClick={() => { setOtpSent(false); setPassword(''); }}
                   className="edit-toggle"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
@@ -165,20 +161,14 @@ const LoginPage = () => {
               <div className="input-wrapper">
                 <input 
                   type="password" 
-                  placeholder="Enter OTP here" 
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Enter password here" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   autoFocus
-                  autoComplete="one-time-code"
-                  style={{ 
-                    paddingLeft: otp ? '1rem' : '3rem', 
-                    textAlign: otp ? 'center' : 'left',
-                    letterSpacing: otp ? '0.5em' : 'normal' 
-                  }}
+                  autoComplete="current-password"
                 />
-                {!otp && <Fingerprint className="input-icon" />}
+                {!password && <Fingerprint className="input-icon" />}
               </div>
             </div>
 

@@ -27,8 +27,8 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   background: linear-gradient(110deg, rgba(255, 95, 69, 0.15), rgba(86, 215, 255, 0.1));
-  padding: 0.9rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -134,20 +134,36 @@
 }
 
 .details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
 }
 
 .details-card {
   border: 1px solid var(--details-border);
   border-radius: 16px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), var(--details-card);
-  padding: 1rem;
+  padding: 0.8rem;
   box-shadow: 0 18px 28px rgba(0, 0, 0, 0.35);
+  flex: 1 1 calc(50% - 0.75rem);
+  min-width: 280px;
 }
 
-.details-card h3,
+.compact-card {
+  padding: 0.7rem 0.75rem;
+}
+
+.details-card h3 {
+  margin: 0 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
 .timeline-card h3 {
   margin: 0 0 0.9rem;
   display: flex;
@@ -164,6 +180,22 @@
   justify-content: space-between;
   gap: 0.8rem;
   margin-bottom: 0.7rem;
+}
+
+.plan-head {
+  align-items: flex-start;
+}
+
+.plan-validity-inline {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+  text-align: right;
+}
+
+.plan-validity-inline small {
+  color: var(--details-muted);
+  font-size: 0.72rem;
 }
 
 .card-head h3 {
@@ -217,32 +249,48 @@
   outline-offset: 2px;
 }
 
-.details-lines {
+.compact-head {
+  margin-bottom: 0.45rem;
+}
+
+.info-grid {
   display: grid;
-  gap: 0.48rem;
+  gap: 0.5rem 0.65rem;
 }
 
-.details-lines p {
-  margin: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.8rem;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
-  padding-bottom: 0.35rem;
+.info-grid.unified-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
-.details-lines p span {
+.details-card.full-width {
+  flex: 1 1 100%;
+}
+
+.info-cell {
+  display: grid;
+  gap: 0.12rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.28rem 0.45rem;
+}
+
+.info-cell span {
   color: var(--details-muted);
-  font-size: 0.84rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.details-lines p strong {
-  font-size: 0.9rem;
-  text-align: right;
+.info-cell strong {
+  font-size: 0.82rem;
+  line-height: 1.2;
+  color: #eef4fd;
+  word-break: break-word;
 }
 
 .validity-box {
-  margin-top: 0.9rem;
+  margin-top: 0.45rem;
   display: inline-grid;
   gap: 0.2rem;
 }
@@ -368,7 +416,7 @@
 }
 
 .timeline-card {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   border: 1px solid var(--details-border);
   border-radius: 16px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), var(--details-card);
@@ -548,6 +596,180 @@
   padding: 1rem;
 }
 
+.add-payment-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 9, 15, 0.72);
+  z-index: 1255;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.add-payment-modal {
+  width: min(760px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(160deg, #182433, #111923);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+}
+
+.add-payment-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 0.85rem;
+}
+
+.add-payment-summary div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.add-payment-summary span {
+  color: #a9bad2;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.add-payment-summary strong {
+  font-size: 0.95rem;
+  color: #f2f7ff;
+}
+
+.add-payment-summary small {
+  color: #c6d4e7;
+  font-size: 0.78rem;
+}
+
+.add-payment-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+
+.modal-field {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #d7e4f4;
+}
+
+.modal-field input,
+.modal-field select {
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef5ff;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.84rem;
+  outline: none;
+  color-scheme: dark;
+}
+
+.modal-field select option {
+  background: #172130;
+  color: #eef5ff;
+}
+
+.payment-details-modal {
+  width: min(640px, 95vw);
+}
+
+.payment-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.payment-detail-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.65rem 0.7rem;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.payment-detail-card span {
+  color: #a6b7ce;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.payment-detail-card strong {
+  font-size: 0.88rem;
+  color: #f2f7ff;
+}
+
+.payment-detail-card small {
+  color: #c6d4e7;
+  font-size: 0.76rem;
+}
+
+.payment-details-amounts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.amount-chip {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.55rem 0.65rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.amount-chip small {
+  color: #a9bad2;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.amount-chip strong {
+  color: #f3f8ff;
+  font-size: 0.9rem;
+}
+
+.payment-fee-lines {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.payment-fee-lines p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.payment-fee-lines p span {
+  color: var(--details-muted);
+}
+
+.payment-fee-lines p strong {
+  color: #f0f6ff;
+}
+
 .clear-due-modal {
   width: min(560px, 95vw);
 }
@@ -558,6 +780,21 @@
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 0.75rem;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .billing-modal-head h4 {
@@ -652,6 +889,13 @@
 }
 
 .clear-due-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.modal-actions {
   margin-top: 0.85rem;
   display: flex;
   justify-content: flex-end;
@@ -863,7 +1107,11 @@
 
 @media (max-width: 960px) {
   .details-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .details-card {
+    flex-basis: 100%;
   }
 
   .finance-highlights {
@@ -877,6 +1125,10 @@
 
   .headline-wrap {
     flex: 1 1 100%;
+  }
+
+  .info-grid.unified-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -893,6 +1145,11 @@
 
   .billing-modal {
     width: min(95vw, 760px);
+    padding: 0.9rem;
+  }
+
+  .add-payment-modal {
+    width: min(95vw, 720px);
     padding: 0.9rem;
   }
 
@@ -954,6 +1211,16 @@
     flex: 1 1 auto;
   }
 
+  .plan-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .plan-validity-inline {
+    justify-items: flex-start;
+    text-align: left;
+  }
+
   .card-head .plan-history-btn {
     margin-left: auto;
   }
@@ -963,14 +1230,8 @@
     height: 30px;
   }
 
-  .details-lines p {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.2rem;
-  }
-
-  .details-lines p strong {
-    text-align: left;
+  .info-grid.unified-grid {
+    grid-template-columns: 1fr;
   }
 
   .finance-highlights {
@@ -990,6 +1251,20 @@
     width: 96vw;
     max-height: 88vh;
     padding: 0.82rem;
+  }
+
+  .add-payment-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .add-payment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-details-grid,
+  .payment-details-amounts {
+    grid-template-columns: 1fr;
   }
 
   .billing-modal-head {

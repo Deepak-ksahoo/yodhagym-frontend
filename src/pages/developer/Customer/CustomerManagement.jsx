@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import {
-  Search, UserPlus, Pencil, UserX, UserCheck, Eye,
-  BadgeCheck, Clock, Loader2, ChevronLeft, ChevronRight, X
+  Search, UserPlus, FileText, PenLine, ShieldCheck, ShieldOff,
+  Loader2, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import './CustomerManagement.scss';
 import { uploadImageToCloudinary } from '../../../utils/uploadImageToCloudinary';
@@ -35,6 +35,25 @@ const toMoney = (value) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.max(numeric, 0);
+};
+
+const hasNumberToken = (source, value) => new RegExp(`(^|\\D)${value}(\\D|$)`).test(source);
+
+const getPlanLabel = (planName = '') => {
+  const raw = String(planName || '').trim();
+  if (!raw) return 'N/A';
+  const lower = raw.toLowerCase();
+  const hasMonth = lower.includes('month');
+  const isAnnual = (hasMonth && hasNumberToken(lower, 12)) || lower.includes('annual') || lower.includes('year');
+  const isHalf = (hasMonth && hasNumberToken(lower, 6)) || lower.includes('half');
+  const isQuarter = (hasMonth && hasNumberToken(lower, 3)) || lower.includes('quarter') || lower.includes('qtr');
+
+  if (isAnnual) return 'Annual';
+  if (isHalf) return 'Half Yr';
+  if (isQuarter) return 'Quarterly';
+  if (hasMonth) return 'Monthly';
+
+  return raw.split(/\s+/)[0] || raw;
 };
 
 const getDefaultAddForm = () => {
@@ -229,12 +248,22 @@ const CustomerManagement = () => {
     const nextPlanEnd = addDaysToDate(addForm.planStartDate, Number(selectedPlan.durationInDays || 0));
     const nextPlanFee = String(selectedPlan.price || '');
     setAddForm((prev) => {
-      if (prev.planEndDate === nextPlanEnd && prev.planFee === nextPlanFee) return prev;
-      return {
-        ...prev,
-        planEndDate: nextPlanEnd,
-        planFee: nextPlanFee,
-      };
+      let hasChange = false;
+      const next = { ...prev };
+
+      if (prev.planEndDate !== nextPlanEnd) {
+        next.planEndDate = nextPlanEnd;
+        hasChange = true;
+      }
+
+      if (!prev.planFee || prev.planFee === nextPlanFee) {
+        if (prev.planFee !== nextPlanFee) {
+          next.planFee = nextPlanFee;
+          hasChange = true;
+        }
+      }
+
+      return hasChange ? next : prev;
     });
   }, [showAddModal, selectedPlan, addForm.planStartDate]);
 
@@ -364,6 +393,15 @@ const CustomerManagement = () => {
 
   const handleAddFormChange = (event) => {
     const { name, value } = event.target;
+    let nextValue = value;
+
+    if (name === 'admissionFee') {
+      if (value === '') {
+        nextValue = '';
+      } else if (!value.startsWith('0.')) {
+        nextValue = value.replace(/^0+/, '') || '0';
+      }
+    }
 
     if (name === 'planId') {
       setAmountPaidTouched(false);
@@ -381,8 +419,8 @@ const CustomerManagement = () => {
     }
 
     setAddForm((prev) => {
-      const next = { ...prev, [name]: value };
-      const pickedPlan = plans.find((plan) => String(plan?._id) === String(name === 'planId' ? value : next.planId));
+      const next = { ...prev, [name]: nextValue };
+      const pickedPlan = plans.find((plan) => String(plan?._id) === String(name === 'planId' ? nextValue : next.planId));
 
       if (name === 'planId') {
         if (pickedPlan) {
@@ -432,7 +470,7 @@ const CustomerManagement = () => {
       return;
     }
 
-    if (!addForm.fullName || !addForm.email || !addForm.number || !addForm.address || !addForm.dob || !addForm.planId || !addForm.joiningDate || !addForm.planStartDate || !addForm.planEndDate) {
+    if (!addForm.fullName || !addForm.email || !addForm.number || !addForm.address || !addForm.dob || !addForm.planId || !addForm.planStartDate || !addForm.planEndDate || !addForm.paymentMethod) {
       setSubmitError('Please fill all required fields before submitting.');
       return;
     }
@@ -468,17 +506,12 @@ const CustomerManagement = () => {
       },
       planId: addForm.planId,
       gender: addForm.gender,
-      joiningDate: addForm.joiningDate,
       planStartDate: addForm.planStartDate,
       planEndDate: addForm.planEndDate,
       admissionFee: Number(addForm.admissionFee || 0),
       planFee: Number(addForm.planFee || 0),
-      amountPaid: Number(addForm.amountPaid || 0),
-      dueAmount: Number(addForm.dueAmount || 0),
-      paymentStatus,
       paymentMethod: addForm.paymentMethod,
       paymentDate: addForm.paymentDate,
-      tax: Number(addForm.tax || 0),
     };
 
     try {
@@ -880,9 +913,7 @@ const CustomerManagement = () => {
               <tr>
                 <th>Member</th>
                 <th>Plan</th>
-                <th>Payment</th>
-                <th>Paid Amount</th>
-                <th>Plan Dates</th>
+                <th>Plan Details</th>
                 <th>Plan Validity</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -895,60 +926,15 @@ const CustomerManagement = () => {
                   const fullName = user?.fullName || user?.name || 'Unknown Member';
                   const contact = user?.number || user?.phone || user?.email || 'No contact';
                   const planName = item?.planId?.planName || item?.planId?.name || item?.planName || item?.plan?.planName || item?.plan?.name || 'N/A';
-
-                  const paymentRecord = Array.isArray(item?.payments) && item.payments.length > 0
-                    ? [...item.payments].sort(
-                      (a, b) => new Date(b?.paymentDate || b?.createdAt || 0) - new Date(a?.paymentDate || a?.createdAt || 0)
-                    )[0]
-                    : null;
-
-                  const billingRecord = Array.isArray(item?.billings) && item.billings.length > 0
-                    ? [...item.billings].sort(
-                      (a, b) => new Date(b?.billingDate || b?.createdAt || 0) - new Date(a?.billingDate || a?.createdAt || 0)
-                    )[0]
-                    : null;
-
-                  const totalAmount = Number(
-                    paymentRecord?.totalBillAmount
-                    ?? billingRecord?.grandTotal
-                    ?? item?.totalAmount
-                    ?? 0
-                  ) || 0;
-
-                  let amountPaid = Number(
-                    paymentRecord?.amountPaid
-                    ?? billingRecord?.subTotal
-                    ?? 0
-                  ) || 0;
-
-                  let dueAmount = Number(
-                    paymentRecord?.dueAmount
-                    ?? Math.max(totalAmount - amountPaid, 0)
-                  ) || 0;
-
-                  if (dueAmount === 0 && totalAmount > 0 && amountPaid === 0) {
-                    amountPaid = totalAmount;
-                  }
-
-                  const rawStatus = String(
-                    paymentRecord?.paymentStatus
-                    || item?.paymentStatus
-                    || item?.status
-                    || ''
-                  ).toUpperCase();
-
-                  const isCompleted = rawStatus
-                    ? ['COMPLETED', 'PAID', 'SUCCESS'].includes(rawStatus)
-                    : dueAmount <= 0;
-
-                  const paymentStatus = isCompleted ? 'PAID' : 'DUE';
-                  const statusClass = isCompleted ? 'completed' : 'due';
+                  const planLabel = getPlanLabel(planName);
 
                   const joinedAt = item?.joiningDate || item?.createdAt || item?.joinedAt || item?.updatedAt;
                   const planStartAt = item?.planStartDate || joinedAt;
                   const planEndAt = item?.planEndDate;
                   const validity = getPlanValidity(planStartAt, planEndAt);
-                  const planClass = String(planName).toLowerCase().split(' ')[0];
+                  const planClass = planLabel === 'N/A'
+                    ? 'unknown'
+                    : planLabel.toLowerCase().replace(/\s+/g, '-');
                   const accountStatus = normalizeAccountStatus(item);
                   const isStatusUpdating = statusUpdatingMemberId === String(item?._id || item?.id || '');
                   const accountActionTitle = accountStatus === 'suspended' ? 'Activate Member' : 'Suspend Member';
@@ -968,26 +954,13 @@ const CustomerManagement = () => {
                       </td>
                       <td data-label="Plan">
                         <span className={`plan-tag ${planClass}`} title={planName}>
-                          {planName}
+                          {planLabel}
                         </span>
                       </td>
-                      <td data-label="Payment">
-                        <span className={`status-tag ${statusClass}`}>
-                          {paymentStatus === 'DUE' ? <Clock size={14} /> : <BadgeCheck size={14} />}
-                          {paymentStatus}
-                        </span>
-                      </td>
-                      <td data-label="Paid Amount">
-                        <div className="price-info">
-                          <strong>₹{amountPaid}</strong>
-                          <small>Due: ₹{dueAmount}</small>
-                        </div>
-                      </td>
-                      <td data-label="Plan Dates">
+                      <td data-label="Plan Details">
                         <div className="plan-dates">
                           <small>Start: {formatDate(planStartAt)}</small>
                           <small>End: {formatDate(planEndAt)}</small>
-                          <small className="joined-meta">Joined: {formatDate(joinedAt)}</small>
                         </div>
                       </td>
                       <td data-label="Plan Validity">
@@ -1004,10 +977,10 @@ const CustomerManagement = () => {
                       <td data-label="Actions">
                         <div className="action-group">
                           <button type="button" className="ghost" title="View Details" onClick={() => handleViewDetails(item)}>
-                            <Eye size={16} />
+                            <FileText size={16} />
                           </button>
                           <button type="button" className="ghost" title="Edit Member" onClick={() => handleOpenEditModal(item)}>
-                            <Pencil size={16} />
+                            <PenLine size={16} />
                           </button>
                           <button
                             type="button"
@@ -1019,9 +992,9 @@ const CustomerManagement = () => {
                             {isStatusUpdating ? (
                               <Loader2 size={16} className="spin-icon" />
                             ) : accountStatus === 'suspended' ? (
-                              <UserCheck size={16} />
+                              <ShieldCheck size={16} />
                             ) : (
-                              <UserX size={16} />
+                              <ShieldOff size={16} />
                             )}
                           </button>
                         </div>
@@ -1031,7 +1004,7 @@ const CustomerManagement = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="8" className="no-data">No members found.</td>
+                  <td colSpan="6" className="no-data">No members found.</td>
                 </tr>
               )}
             </tbody>
@@ -1156,7 +1129,7 @@ const CustomerManagement = () => {
             <div className="add-member-head">
               <div>
                 <h3>Add New Member</h3>
-                <p>Quick entry with auto plan fee, plan end date, due amount, and payment status.</p>
+                <p>Quick entry with auto plan fee, plan end date, and payment details.</p>
               </div>
               <button type="button" className="icon-btn" onClick={() => setShowAddModal(false)}>
                 <X size={16} />
@@ -1188,18 +1161,11 @@ const CustomerManagement = () => {
                   <option value="other">Other</option>
                 </select>
               </label>
-              <label className="form-field">Joining Date*<input name="joiningDate" type="date" value={addForm.joiningDate} onChange={handleAddFormChange} /></label>
               <label className="form-field">Plan Start Date*<input name="planStartDate" type="date" value={addForm.planStartDate} onChange={handleAddFormChange} /></label>
 
               <label className="form-field">Plan End Date*<input name="planEndDate" type="date" value={addForm.planEndDate} readOnly /></label>
-              <label className="form-field">Plan Fee*<input name="planFee" type="number" value={addForm.planFee} readOnly onWheel={handleNumberWheel} /></label>
+              <label className="form-field">Plan Fee*<input name="planFee" type="number" value={addForm.planFee} onChange={handleAddFormChange} onWheel={handleNumberWheel} /></label>
               <label className="form-field">Admission Fee (Optional)<input name="admissionFee" type="number" placeholder="0" value={addForm.admissionFee} onChange={handleAddFormChange} onWheel={handleNumberWheel} /></label>
-
-              <label className="form-field">Tax<input name="tax" type="number" value={addForm.tax} onChange={handleAddFormChange} onWheel={handleNumberWheel} /></label>
-              <label className="form-field">Amount Paid*<input name="amountPaid" type="number" value={addForm.amountPaid} onChange={handleAddFormChange} onWheel={handleNumberWheel} /></label>
-
-              <label className="form-field">Due Amount<input name="dueAmount" type="number" value={addForm.dueAmount} onChange={handleAddFormChange} onWheel={handleNumberWheel} /></label>
-              <label className="form-field">Payment Status<input value={paymentStatus} readOnly /></label>
               <label className="form-field">Payment Method*
                 <select name="paymentMethod" value={addForm.paymentMethod} onChange={handleAddFormChange}>
                   <option value="CASH">CASH</option>
@@ -1208,7 +1174,7 @@ const CustomerManagement = () => {
                 </select>
               </label>
 
-              <label className="form-field">Payment Date*<input name="paymentDate" type="date" value={addForm.paymentDate} readOnly /></label>
+              <label className="form-field">Payment Date (Optional)<input name="paymentDate" type="date" value={addForm.paymentDate} onChange={handleAddFormChange} /></label>
 
               <div className="form-field span-3 identity-proof-field">
                 <span>Aadhar Image (Max 3, JPG/JPEG/PNG/WEBP/GIF)</span>

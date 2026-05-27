@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Send, Mail, Phone } from 'lucide-react';
+import { Search, Send, Phone } from 'lucide-react';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 import './Notifications.scss';
@@ -9,6 +9,20 @@ const NOTIFICATIONS_API = '/api/notifications/getallnotifications';
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
   return new Date(dateStr).toLocaleDateString('en-IN');
+};
+
+const sanitizePhoneNumber = (value) => {
+  if (!value) return '';
+  let digits = String(value).replace(/\D/g, '');
+  digits = digits.replace(/^0+/, '');
+  if (digits.length === 10) digits = `91${digits}`;
+  return digits;
+};
+
+const buildWhatsAppMessage = (notification) => {
+  const name = notification.user?.name || 'Member';
+  const endDate = notification.planEndDate ? formatDate(notification.planEndDate) : 'soon';
+  return `Hi ${name}, your plan is ending soon (end date: ${endDate}). Please renew to continue your training at Yodha Gym.`;
 };
 
 const statusColor = (status) => {
@@ -62,6 +76,18 @@ const Notifications = () => {
       );
     })
     .sort((a, b) => statusOrder(a.status) - statusOrder(b.status));
+
+  const handleRemind = (notification) => {
+    const rawNumber = notification.user?.number;
+    const phone = sanitizePhoneNumber(rawNumber);
+    if (!phone) {
+      toast.error('Valid phone number not found');
+      return;
+    }
+    const message = buildWhatsAppMessage(notification);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="notify-page">
@@ -127,7 +153,7 @@ const Notifications = () => {
                     {n.setReminderOption && (
                       <button
                         className="remind-btn"
-                        onClick={() => toast.success(`Reminder sent to ${n.user?.name}`)}
+                        onClick={() => handleRemind(n)}
                       >
                         <Send size={15} /> Remind
                       </button>
