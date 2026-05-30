@@ -56,6 +56,46 @@ const getPlanLabel = (planName = '') => {
   return raw.split(/\s+/)[0] || raw;
 };
 
+// Prefer structured plan details (duration fields) when available.
+const getPlanLabelFromPlan = (planObj, planNameFallback = '') => {
+  try {
+    if (planObj && typeof planObj === 'object') {
+      // possible numeric duration fields used across code/models
+      const durationFields = ['durationInDays', 'duration', 'durationDays', 'days'];
+      let days = null;
+      for (const f of durationFields) {
+        if (planObj[f] !== undefined && planObj[f] !== null && planObj[f] !== '') {
+          const n = Number(planObj[f]);
+          if (Number.isFinite(n)) { days = n; break; }
+        }
+      }
+
+      // common months field -> convert to approx days
+      if (days === null && (planObj.durationInMonths || planObj.months)) {
+        const m = Number(planObj.durationInMonths || planObj.months);
+        if (Number.isFinite(m)) days = Math.round(m * 30);
+      }
+
+      if (days !== null) {
+        if (days >= 365) return 'Annual';
+        if (days >= 180) return 'Half Yr';
+        if (days >= 90) return 'Quarterly';
+        if (days >= 28) return 'Monthly';
+        if (days === 1) return 'Single Day';
+        return `${days} days`;
+      }
+
+      // fallback to name inside plan object
+      const name = String(planObj.planName || planObj.name || planObj.tag || '').trim();
+      if (name) return getPlanLabel(name);
+    }
+  } catch (e) {
+    // fall through to fallback
+  }
+
+  return getPlanLabel(planNameFallback);
+};
+
 const getDefaultAddForm = () => {
   const today = new Date().toISOString().slice(0, 10);
   return {
@@ -925,8 +965,9 @@ const CustomerManagement = () => {
                   const user = item?.userId || item?.memberId || item || {};
                   const fullName = user?.fullName || user?.name || 'Unknown Member';
                   const contact = user?.number || user?.phone || user?.email || 'No contact';
-                  const planName = item?.planId?.planName || item?.planId?.name || item?.planName || item?.plan?.planName || item?.plan?.name || 'N/A';
-                  const planLabel = getPlanLabel(planName);
+                  const planObj = item?.planId || item?.plan || item?.rowPlan || null;
+                  const planName = item?.planId?.planName || item?.planId?.name || item?.planName || item?.plan?.planName || item?.plan?.name || (planObj && (planObj.planName || planObj.name)) || 'N/A';
+                  const planLabel = getPlanLabelFromPlan(planObj, planName);
 
                   const joinedAt = item?.joiningDate || item?.createdAt || item?.joinedAt || item?.updatedAt;
                   const planStartAt = item?.planStartDate || joinedAt;
