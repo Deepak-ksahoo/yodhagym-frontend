@@ -1,8 +1,7 @@
-// For identity proof modal
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../../../utils/api';
-import { toast } from 'react-toastify';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import api from "../../../utils/api";
+import { toast } from "react-toastify";
 import {
   ArrowLeft,
   UserRound,
@@ -13,57 +12,42 @@ import {
   Download,
   Share2,
   X,
-} from 'lucide-react';
-import './CustomerDetails.scss';
-import { useAuth } from '../../../context/AuthContext';
-import { uploadFileToCloudinary } from '../../../utils/uploadFileToCloudinary';
+} from "lucide-react";
+import "./CustomerDetails.scss";
+import { useAuth } from "../../../context/AuthContext";
+import { uploadFileToCloudinary } from "../../../utils/uploadFileToCloudinary";
 
-const API_URL = '/api/members/getallmembers';
-const PLANS_API = '/api/plans/getallplans';
-const CREATE_PAYMENT_API = '/api/payments/createpayment';
+const API_URL = "/api/members/getallmembers";
+const PLANS_API = "/api/plans/getallplans";
+const CREATE_PAYMENT_API = "/api/payments/createpayment";
+const CLEAR_DUE_PAYMENT_API = "/api/payments/clearduepayment";
 
 const formatDate = (value) => {
-  if (!value) return 'N/A';
-  return new Date(value).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+  if (!value) return "N/A";
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 };
 
-const formatCurrency = (value) => `INR ${Number(value || 0).toLocaleString('en-IN')}`;
-
-const formatBillingMonth = (value) => {
-  if (!value) return 'N/A';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'N/A';
-  return parsed.toLocaleDateString('en-IN', {
-    month: 'long',
-    year: 'numeric',
-  });
-};
+const formatCurrency = (value) =>
+  `INR ${Number(value || 0).toLocaleString("en-IN")}`;
 
 const formatRupees = (value) => {
   const amount = Number(value || 0);
-  if (!Number.isFinite(amount)) return '₹0';
-  return `₹${amount.toLocaleString('en-IN')}`;
+  if (!Number.isFinite(amount)) return "₹0";
+  return `₹${amount.toLocaleString("en-IN")}`;
 };
 
 const sanitizePhoneNumber = (value) => {
-  if (!value) return '';
-  const digits = String(value).replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+  if (!value) return "";
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length === 11 && digits.startsWith("0"))
+    return `91${digits.slice(1)}`;
   if (digits.length === 10) return `91${digits}`;
   return digits;
-};
-
-const toSafeCloudinaryId = (value) => {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 };
 
 const toIsoDateStart = (dateStr) => {
@@ -74,50 +58,37 @@ const toIsoDateStart = (dateStr) => {
 };
 
 const addDaysToDate = (dateStr, days) => {
-  if (!dateStr || !Number.isFinite(Number(days))) return '';
+  if (!dateStr || !Number.isFinite(Number(days))) return "";
   const date = new Date(`${dateStr}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return "";
   date.setDate(date.getDate() + Number(days));
   return date.toISOString().slice(0, 10);
 };
 
-const resolveMemberId = (value) => String(value?._id || value?.id || value?.memberId || '');
-
+const resolveMemberId = (value) =>
+  String(value?._id || value?.id || value?.memberId || "");
 const resolvePlanId = (value) => {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return String(value?._id || value?.id || '');
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value?._id || value?.id || "");
 };
 
-const getDefaultAddForm = (memberId = '', planId = '') => {
+const getDefaultAddForm = (memberId = "", planId = "") => {
   const today = new Date().toISOString().slice(0, 10);
   return {
     memberId,
     planId,
     planStartDate: today,
-    planEndDate: '',
-    planFee: '',
-    paymentMethod: 'UPI',
+    planEndDate: "",
+    planFee: "",
+    paidAmount: "",
+    dueAmount: "0",
+    paymentMethod: "UPI",
     paymentDate: today,
   };
 };
 
 const getDateValue = (value) => new Date(value || 0).getTime();
-
-const getCycleKey = (entry) => {
-  const planId = String(entry?.planId || entry?.plan?._id || '');
-  const startDate = String(entry?.planStartDate || '').slice(0, 10);
-  const endDate = String(entry?.planEndDate || '').slice(0, 10);
-  if (planId || startDate || endDate) return `${planId}__${startDate}__${endDate}`;
-
-  const snapshotName = String(
-    entry?.planSnapshot?.planName ||
-    entry?.planName ||
-    entry?.plan?.planName ||
-    ''
-  ).toLowerCase();
-  return `name__${snapshotName}`;
-};
 
 const toAmount = (value) => {
   const numeric = Number(value || 0);
@@ -125,86 +96,12 @@ const toAmount = (value) => {
   return Math.max(numeric, 0);
 };
 
-const resolveFinancials = (payment, billing, fallback = {}) => {
-  const admissionFee = toAmount(payment?.admissionFee ?? billing?.admissionFee ?? fallback?.admissionFee ?? 0);
-  const planFee = toAmount(payment?.planFee ?? billing?.planFee ?? fallback?.planFee ?? fallback?.planPrice ?? 0);
-  const tax = toAmount(payment?.tax ?? billing?.tax ?? fallback?.tax ?? 0);
-  const paid = toAmount(payment?.amountPaid ?? billing?.amountPaid ?? billing?.subTotal ?? fallback?.amountPaid ?? 0);
-  const explicitDueRaw = payment?.dueAmount ?? billing?.dueAmount ?? fallback?.dueAmount;
-  const explicitDue = explicitDueRaw !== undefined && explicitDueRaw !== null ? toAmount(explicitDueRaw) : null;
-  const explicitTotal = toAmount(payment?.totalBillAmount ?? billing?.grandTotal ?? fallback?.totalAmount ?? 0);
-
-  const guessedTotalFromFee = admissionFee + planFee + tax;
-  const guessedTotalFromTxn = paid + (explicitDue ?? 0);
-  const totalBill = Math.max(explicitTotal, guessedTotalFromFee, guessedTotalFromTxn);
-  const due = explicitDue !== null ? explicitDue : Math.max(totalBill - paid, 0);
-
+const getPaymentStatus = (dueAmount) => {
+  const hasDue = Number(dueAmount || 0) > 0;
   return {
-    admissionFee,
-    planFee,
-    tax,
-    paid,
-    due,
-    totalBill,
+    label: hasDue ? "PARTIAL" : "PAID",
+    className: hasDue ? "due" : "paid",
   };
-};
-
-const getPaymentStatus = (payment) => {
-  const raw = String(payment?.paymentStatus || '').toUpperCase();
-  const isPaid = !raw || ['PAID', 'COMPLETED', 'SUCCESS'].includes(raw);
-  return {
-    label: isPaid ? 'PAID' : raw,
-    className: isPaid ? 'paid' : 'due',
-  };
-};
-
-const buildPaymentShareText = (entry, memberName = 'Member', receiptUrl = '') => {
-  const payment = entry?.payment || {};
-  const planName = entry?.rowPlan?.name || 'N/A';
-  const billingMonth = formatBillingMonth(payment?.paymentDate || payment?.createdAt);
-  const amount = formatRupees(entry?.paidAmount ?? entry?.totalBill ?? 0);
-
-  return [
-    '🏋️‍♂️ *YODHA GYM - INVOICE ALERT* 🏋️‍♂️',
-    '',
-    `Hello ${memberName},`,
-    '',
-    'Your gym subscription invoice for this month has been successfully generated. Please find the details below:',
-    '',
-    `📅 *Billing Month:* ${billingMonth}`,
-    `💰 *Amount:* ${amount}`,
-    '📊 *Status:* Paid / Confirmed',
-    '',
-    'You can view and download your official digital receipt by clicking the link below:',
-    `🔗 ${receiptUrl}`,
-    '',
-    'Thank you for being a valued member of YODHA GYM! Stay strong, stay fit! 💪🔥',
-  ].join('\n');
-};
-
-const getPlanValidity = (startDate, endDate) => {
-  if (!endDate) return { label: 'N/A', className: 'unknown', hint: 'No end date' };
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const start = startDate ? new Date(startDate) : null;
-  const end = new Date(endDate);
-  start?.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-
-  const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-
-  if (daysLeft < 0) return { label: 'CLOSED', className: 'closed', hint: 'Plan ended' };
-  if (start && today < start) {
-    return {
-      label: 'UPCOMING',
-      className: 'upcoming',
-      hint: `Starts in ${Math.ceil((start - today) / (1000 * 60 * 60 * 24))} day(s)`,
-    };
-  }
-  if (daysLeft <= 5) return { label: 'CLOSING SOON', className: 'soon', hint: `${daysLeft} day(s) left` };
-  return { label: 'ACTIVE', className: 'active', hint: `${daysLeft} day(s) left` };
 };
 
 const CustomerDetails = () => {
@@ -214,87 +111,94 @@ const CustomerDetails = () => {
 
   const [member, setMember] = useState(location.state?.member || null);
   const [loading, setLoading] = useState(!location.state?.member);
-  const [error, setError] = useState('');
-  const [planMap, setPlanMap] = useState({});
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [addPaymentSubmitting, setAddPaymentSubmitting] = useState(false);
-  const [addPaymentForm, setAddPaymentForm] = useState(() => getDefaultAddForm());
+  const [addPaymentForm, setAddPaymentForm] = useState(() =>
+    getDefaultAddForm(),
+  );
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
-  const fetchMemberDetails = useCallback(async (memberIdOverride) => {
-    setLoading(true);
-    setError('');
-    try {
-      const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
-      if (!authToken) throw new Error('Missing auth token. Please login again.');
+  const [showClearDueModal, setShowClearDueModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [clearingDue, setClearingDue] = useState(false);
 
-      const response = await api.get(`${API_URL}?page=1&limit=250`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+  const fetchMemberDetails = useCallback(
+    async (memberIdOverride) => {
+      setLoading(true);
+      try {
+        const authToken = (
+          token ||
+          localStorage.getItem("yodha_token") ||
+          ""
+        ).trim();
+        if (!authToken)
+          throw new Error("Missing auth token. Please login again.");
 
-      const payload = response?.data?.data;
-      const members = payload?.members || payload?.records || payload?.items || [];
-      const selectedMemberId = memberIdOverride || sessionStorage.getItem('yodha_selected_member_id');
-      const found = selectedMemberId
-        ? members.find((item) => String(item?._id || item?.id) === String(selectedMemberId))
-        : null;
+        const response = await api.get(`${API_URL}?page=1&limit=250`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
 
-      if (!found) {
-        setError('Member details not found.');
-        setMember(null);
-      } else {
-        setMember(found);
-        const id = found?._id || found?.id;
-        if (id) sessionStorage.setItem('yodha_selected_member_id', id);
+        const payload = response?.data?.data;
+        const members =
+          payload?.members || payload?.records || payload?.items || [];
+        const selectedMemberId =
+          memberIdOverride ||
+          sessionStorage.getItem("yodha_selected_member_id");
+        const found = members.find(
+          (item) => String(item?._id || item?.id) === String(selectedMemberId),
+        );
+
+        if (!found) {
+          setMember(null);
+        } else {
+          setMember(found);
+          const id = found?._id || found?.id;
+          if (id) sessionStorage.setItem("yodha_selected_member_id", id);
+        }
+      } catch (err) {
+        toast.error("Failed to fetch member details.");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to fetch member details.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
 
   useEffect(() => {
     const stateMember = location.state?.member;
     if (stateMember) {
       setMember(stateMember);
       const id = stateMember?._id || stateMember?.id;
-      if (id) sessionStorage.setItem('yodha_selected_member_id', id);
+      if (id) sessionStorage.setItem("yodha_selected_member_id", id);
       setLoading(false);
       return;
     }
-
     fetchMemberDetails();
   }, [fetchMemberDetails, location.state]);
 
   const fetchPlans = useCallback(async () => {
     try {
-      const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
-      if (!authToken) {
-        setPlans([]);
-        setPlanMap({});
-        setPlansLoading(false);
-        return;
-      }
+      const authToken = (
+        token ||
+        localStorage.getItem("yodha_token") ||
+        ""
+      ).trim();
+      if (!authToken) return;
 
       setPlansLoading(true);
       const response = await api.get(PLANS_API, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
-      const list = response?.data?.plans || response?.data?.data || (Array.isArray(response?.data) ? response.data : []);
-      const normalized = Array.isArray(list) ? list : [];
-      const map = {};
-      normalized.forEach((item) => {
-        if (item?._id) {
-          map[String(item._id)] = item?.planName || 'N/A';
-        }
-      });
-      setPlans(normalized);
-      setPlanMap(map);
+      const list =
+        response?.data?.plans ||
+        response?.data?.data ||
+        (Array.isArray(response?.data) ? response.data : []);
+      setPlans(Array.isArray(list) ? list : []);
     } catch {
-      // Plan map is best-effort for historical display.
+      toast.error("Failed to load plans.");
     } finally {
       setPlansLoading(false);
     }
@@ -304,219 +208,178 @@ const CustomerDetails = () => {
     fetchPlans();
   }, [fetchPlans]);
 
+  // MOVED THESE FUNCTIONS INSIDE THE COMPONENT
+  const handleOpenClearDueModal = (payment) => {
+    setSelectedPayment(payment);
+    setShowClearDueModal(true);
+  };
+
+  const handleClearDuePayment = async () => {
+    if (!selectedPayment?._id) {
+      toast.error("Payment not found.");
+      return;
+    }
+
+    const authToken = (
+      token ||
+      localStorage.getItem("yodha_token") ||
+      ""
+    ).trim();
+
+    if (!authToken) {
+      toast.error("Missing auth token.");
+      return;
+    }
+
+    try {
+      setClearingDue(true);
+
+      const response = await api.patch(
+        CLEAR_DUE_PAYMENT_API,
+        {
+          paymentId: selectedPayment._id,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      );
+
+      if (!response?.data?.success) {
+        throw new Error(
+          response?.data?.message || "Unable to clear due payment.",
+        );
+      }
+
+      toast.success("Due amount cleared successfully.");
+
+      setShowClearDueModal(false);
+      setSelectedPayment(null);
+
+      await fetchMemberDetails(resolveMemberId(member));
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to clear due amount.",
+      );
+    } finally {
+      setClearingDue(false);
+    }
+  };
+
   const payments = useMemo(() => {
     if (!Array.isArray(member?.payments)) return [];
     return [...member.payments].sort(
-      (a, b) => getDateValue(b?.paymentDate || b?.createdAt) - getDateValue(a?.paymentDate || a?.createdAt)
+      (a, b) =>
+        getDateValue(b?.paymentDate || b?.createdAt) -
+        getDateValue(a?.paymentDate || a?.createdAt),
     );
   }, [member]);
-
-  const billings = useMemo(() => {
-    if (!Array.isArray(member?.billings)) return [];
-    return [...member.billings].sort(
-      (a, b) => getDateValue(b?.billingDate || b?.createdAt) - getDateValue(a?.billingDate || a?.createdAt)
-    );
-  }, [member]);
-
-  const latestPayment = payments[0] || null;
-  const latestBilling = billings[0] || null;
 
   const user = member?.userId || {};
-  // Identity proof modal state
-  const [showIdentityModal, setShowIdentityModal] = useState(false);
-  // Get identityProof array
   const identityProofArr = Array.isArray(user?.identityProof)
     ? user.identityProof
-    : Array.isArray(member?.identityProof)
-      ? member.identityProof
-      : [];
+    : [];
   const plan = member?.planId || {};
-  const planValidity = getPlanValidity(member?.planStartDate, member?.planEndDate);
-  const latestFinancial = resolveFinancials(latestPayment, latestBilling, {
-    admissionFee: member?.admissionFee,
-    planFee: member?.planFee ?? plan?.price,
-    totalAmount: member?.totalAmount,
-  });
 
-  const resolvePlanDetailsFromPayment = (payment, linkedBillings = []) => {
-    const firstBilling = linkedBillings[0] || null;
-    const historicalPlanId = String(payment?.planId || firstBilling?.planId || '');
-    const sameAsCurrent = historicalPlanId && String(plan?._id || '') === historicalPlanId;
-
-    const name =
-      payment?.planSnapshot?.planName ||
-      payment?.planName ||
-      firstBilling?.planSnapshot?.planName ||
-      firstBilling?.planName ||
-      (historicalPlanId ? planMap[historicalPlanId] : null) ||
-      (sameAsCurrent ? plan?.planName : null) ||
-      'Plan from payment record';
-
-    const startDate =
-      payment?.planStartDate ||
-      firstBilling?.planStartDate ||
-      (sameAsCurrent ? member?.planStartDate : null) ||
-      null;
-
-    const endDate =
-      payment?.planEndDate ||
-      firstBilling?.planEndDate ||
-      (sameAsCurrent ? member?.planEndDate : null) ||
-      null;
-
-    return {
-      name,
-      startDate,
-      endDate,
-      id: historicalPlanId || 'N/A',
-    };
-  };
-
-  const allPaymentEntries = useMemo(() => {
-    return payments
-      .map((payment) => {
-        const cycleKey = getCycleKey(payment);
-        const relatedPayments = payments
-          .filter((item) => getCycleKey(item) === cycleKey)
-          .sort((a, b) => getDateValue(b?.paymentDate || b?.createdAt) - getDateValue(a?.paymentDate || a?.createdAt));
-
-        const relatedPaymentIds = new Set(
-          relatedPayments
-            .map((item) => String(item?._id || ''))
-            .filter(Boolean)
-        );
-
-        const linkedBillings = billings
-          .filter((billing) => {
-            const billingPaymentId = String(billing?.paymentId || '');
-            if (billingPaymentId && relatedPaymentIds.has(billingPaymentId)) return true;
-            return getCycleKey(billing) === cycleKey;
-          })
-          .sort((a, b) => getDateValue(b?.billingDate || b?.createdAt) - getDateValue(a?.billingDate || a?.createdAt));
-
-        const selectedPaymentId = String(payment?._id || '');
-        const paymentBillings = billings
-          .filter((billing) => String(billing?.paymentId || '') === selectedPaymentId)
-          .sort((a, b) => getDateValue(b?.billingDate || b?.createdAt) - getDateValue(a?.billingDate || a?.createdAt));
-
-        const rowPlan = resolvePlanDetailsFromPayment(payment, linkedBillings);
-        const financials = resolveFinancials(payment, linkedBillings[0], {
-          admissionFee: payment?.admissionFee || linkedBillings[0]?.admissionFee || 0,
-          planFee: payment?.planFee || payment?.totalBillAmount || linkedBillings[0]?.subTotal || 0,
-          totalAmount: payment?.totalBillAmount || linkedBillings[0]?.grandTotal || 0,
-        });
-        const status = getPaymentStatus(payment);
-
-        return {
-          key: payment?._id || `payment-${payment?.paymentDate || payment?.createdAt}`,
-          cycleKey,
-          payment,
-          relatedPayments,
-          rowPlan,
-          linkedBillings,
-          paymentBillings,
-          admissionFee: financials.admissionFee,
-          planFee: financials.planFee,
-          tax: financials.tax,
-          totalBill: financials.totalBill,
-          paidAmount: financials.paid,
-          dueAmount: financials.due,
-          status,
-        };
-      });
-  }, [payments, billings, member?.totalAmount, planMap]);
-
-  const paymentHistory = useMemo(() => allPaymentEntries, [allPaymentEntries]);
-
-  const selectedAddPlan = useMemo(
-    () => plans.find((planItem) => String(planItem?._id) === String(addPaymentForm.planId)),
-    [addPaymentForm.planId, plans]
-  );
-
-  // useEffect(() => {
-  //   if (!showAddPaymentModal || !selectedAddPlan || !addPaymentForm.planStartDate) return;
-
-  //   const computedPlanEnd = addDaysToDate(addPaymentForm.planStartDate, Number(selectedAddPlan.durationInDays || 0));
-  //   const computedPlanFee = String(toAmount(selectedAddPlan.price));
-
-  //   setAddPaymentForm((prev) => {
-  //     let hasChange = false;
-  //     const next = { ...prev };
-
-  //     if (prev.planEndDate !== computedPlanEnd) {
-  //       next.planEndDate = computedPlanEnd;
-  //       hasChange = true;
-  //     }
-
-  //     if (!prev.planFee || prev.planFee === computedPlanFee) {
-  //       if (prev.planFee !== computedPlanFee) {
-  //         next.planFee = computedPlanFee;
-  //         hasChange = true;
-  //       }
-  //     }
-
-  //     return hasChange ? next : prev;
-  //   });
-  // }, [addPaymentForm.planStartDate, selectedAddPlan, showAddPaymentModal]);
-
-  const actionLabel = 'New Payment';
-  const actionHint = 'Create a new payment entry for this member.';
-
-  const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dev';
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
+    const basePath = location.pathname.startsWith("/admin") ? "/admin" : "/dev";
     navigate(`${basePath}/customers`);
   };
 
   const handlePrimaryAction = () => {
     const memberId = resolveMemberId(member);
     const planId = resolvePlanId(member?.planId) || resolvePlanId(plan);
-    setAddPaymentForm(getDefaultAddForm(memberId, planId));
-    setShowAddPaymentModal(true);
+    const defaultForm = getDefaultAddForm(memberId, planId);
 
+    if (planId && plans.length > 0) {
+      const selectedPlan = plans.find((p) => String(p?._id) === String(planId));
+      if (selectedPlan) {
+        defaultForm.planFee = String(toAmount(selectedPlan.price));
+        defaultForm.paidAmount = defaultForm.planFee;
+        defaultForm.dueAmount = "0";
+        defaultForm.planEndDate = addDaysToDate(
+          defaultForm.planStartDate,
+          Number(selectedPlan.durationInDays || 0),
+        );
+      }
+    }
+
+    setAddPaymentForm(defaultForm);
+    setShowAddPaymentModal(true);
     if (!plans.length && !plansLoading) {
-      fetchPlans().catch(() => {
-        toast.error('Failed to load plans. Please try again.');
-      });
+      fetchPlans();
     }
   };
 
- const handleAddPaymentChange = (event) => {
+  const handleAddPaymentChange = (event) => {
     const { name, value } = event.target;
+    let nextValue = value;
+
+    if (name === "planFee" || name === "paidAmount" || name === "dueAmount") {
+      if (value === "") {
+        nextValue = "";
+      } else if (!value.startsWith("0.")) {
+        nextValue = value.replace(/^0+/, "") || "0";
+      }
+    }
 
     setAddPaymentForm((prev) => {
-      const next = { ...prev, [name]: value };
+      const next = { ...prev, [name]: nextValue };
 
-      // Agar Plan change hua hai
-      if (name === 'planId') {
+      if (name === "planId") {
         if (!value) {
-          next.planFee = '';
-          next.planEndDate = '';
+          next.planFee = "";
+          next.paidAmount = "";
+          next.planEndDate = "";
+          next.dueAmount = "0";
         } else {
-          // Jo plan select kiya hai usko find karein
-          const selectedPlan = plans.find((p) => String(p?._id) === String(value));
+          const selectedPlan = plans.find(
+            (p) => String(p?._id) === String(value),
+          );
           if (selectedPlan) {
+            const today = new Date().toISOString().slice(0, 10);
+            next.planStartDate = today;
+            next.planEndDate = addDaysToDate(
+              today,
+              Number(selectedPlan.durationInDays || 0),
+            );
             next.planFee = String(toAmount(selectedPlan.price));
-            if (next.planStartDate) {
-              next.planEndDate = addDaysToDate(next.planStartDate, Number(selectedPlan.durationInDays || 0));
-            }
+            next.paidAmount = next.planFee;
+            next.dueAmount = "0";
           }
         }
       }
 
-      // Agar Plan Start Date change hui hai
-      if (name === 'planStartDate') {
+      if (name === "planStartDate") {
         if (!value) {
-          next.planEndDate = '';
+          next.planEndDate = "";
         } else {
-          const selectedPlan = plans.find((p) => String(p?._id) === String(prev.planId));
+          const selectedPlan = plans.find(
+            (p) => String(p?._id) === String(prev.planId),
+          );
           if (selectedPlan) {
-            next.planEndDate = addDaysToDate(value, Number(selectedPlan.durationInDays || 0));
+            next.planEndDate = addDaysToDate(
+              value,
+              Number(selectedPlan.durationInDays || 0),
+            );
           }
         }
+      }
+
+      if (name === "planFee" || name === "paidAmount") {
+        const fee = Number(next.planFee || 0);
+        const paid = Number(next.paidAmount || 0);
+        next.dueAmount = String(Math.max(0, fee - paid));
+      }
+
+      if (name === "dueAmount") {
+        const fee = Number(next.planFee || 0);
+        const due = Number(next.dueAmount || 0);
+        next.paidAmount = String(Math.max(0, fee - due));
       }
 
       return next;
@@ -528,14 +391,25 @@ const CustomerDetails = () => {
   };
 
   const handleCreatePayment = async () => {
-    const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
+    const authToken = (
+      token ||
+      localStorage.getItem("yodha_token") ||
+      ""
+    ).trim();
     if (!authToken) {
-      toast.error('Missing auth token. Please login again.');
+      toast.error("Missing auth token. Please login again.");
       return;
     }
 
-    if (!addPaymentForm.memberId || !addPaymentForm.planId || !addPaymentForm.planStartDate || !addPaymentForm.planEndDate || !addPaymentForm.paymentMethod || !addPaymentForm.paymentDate) {
-      toast.error('Please fill all required payment fields.');
+    if (
+      !addPaymentForm.memberId ||
+      !addPaymentForm.planId ||
+      !addPaymentForm.planStartDate ||
+      !addPaymentForm.planEndDate ||
+      !addPaymentForm.paymentMethod ||
+      !addPaymentForm.paymentDate
+    ) {
+      toast.error("Please fill all required payment fields.");
       return;
     }
 
@@ -545,6 +419,7 @@ const CustomerDetails = () => {
       planStartDate: toIsoDateStart(addPaymentForm.planStartDate),
       planEndDate: toIsoDateStart(addPaymentForm.planEndDate),
       planFee: toAmount(addPaymentForm.planFee),
+      dueAmount: toAmount(addPaymentForm.dueAmount),
       paymentMethod: String(addPaymentForm.paymentMethod).toUpperCase(),
       paymentDate: toIsoDateStart(addPaymentForm.paymentDate),
     };
@@ -553,188 +428,129 @@ const CustomerDetails = () => {
       setAddPaymentSubmitting(true);
       const response = await api.post(CREATE_PAYMENT_API, payload, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
       });
 
       if (!response?.data?.success) {
-        throw new Error(response?.data?.message || 'Unable to create payment.');
+        throw new Error(response?.data?.message || "Unable to create payment.");
       }
 
-      toast.success('Payment created successfully.');
+      toast.success("Payment created successfully.");
       setShowAddPaymentModal(false);
       await fetchMemberDetails(addPaymentForm.memberId);
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to create payment.');
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to create payment.",
+      );
     } finally {
       setAddPaymentSubmitting(false);
     }
   };
 
-  const handleDownloadBilling = (billing, rowPlan) => {
-    if (!billing) return;
+  const fetchPaymentReceiptBlob = async (paymentId) => {
+    if (!paymentId) return null;
+    const authToken = (
+      token ||
+      localStorage.getItem("yodha_token") ||
+      ""
+    ).trim();
+    try {
+      const response = await api.post(
+        "/api/payment/receipt",
+        { paymentId: String(paymentId) },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          responseType: "blob",
+        },
+      );
+      return new Blob([response.data], {
+        type: response.headers["content-type"] || "application/pdf",
+      });
+    } catch {
+      toast.error("Failed to fetch invoice.");
+      return null;
+    }
+  };
 
-    const payload = {
-      invoiceNumber: billing?.invoiceNumber || 'N/A',
-      memberName: user?.fullName || 'N/A',
-      planName: rowPlan?.name || 'N/A',
-      planStartDate: formatDate(rowPlan?.startDate),
-      planEndDate: formatDate(rowPlan?.endDate),
-      billingDate: formatDate(billing?.billingDate || billing?.createdAt),
-      subTotal: billing?.subTotal || 0,
-      grandTotal: billing?.grandTotal || 0,
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+  const handleDownloadPaymentSnapshot = async (payItem) => {
+    const receiptBlob = await fetchPaymentReceiptBlob(payItem?._id);
+    if (!receiptBlob) return;
+    const url = URL.createObjectURL(receiptBlob);
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `${billing?.invoiceNumber || 'invoice'}.json`;
+    link.download = `receipt-${String(payItem?.paymentDate || "").slice(0, 10)}.pdf`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
-  const handleSendBilling = (billing, rowPlan) => {
-    if (!billing || !user?.email) return;
-    const subject = encodeURIComponent(`Invoice ${billing?.invoiceNumber || ''}`);
-    const body = encodeURIComponent(
-      `Hello ${user?.fullName || 'Member'},\n\n` +
-      `Invoice: ${billing?.invoiceNumber || 'N/A'}\n` +
-      `Plan: ${rowPlan?.name || 'N/A'}\n` +
-      `Plan Start: ${formatDate(rowPlan?.startDate)}\n` +
-      `Plan End: ${formatDate(rowPlan?.endDate)}\n` +
-      `Billing Date: ${formatDate(billing?.billingDate || billing?.createdAt)}\n` +
-      `Grand Total: ${formatCurrency(billing?.grandTotal)}\n\n` +
-      `Regards,\nYodha Gym`
-    );
-    window.open(`mailto:${user.email}?subject=${subject}&body=${body}`, '_blank');
-  };
-
-  const fetchPaymentReceiptBlob = async (paymentId) => {
-    if (!paymentId) {
-      toast.error('Payment ID not found for this record.');
-      return null;
-    }
-
-    const authToken = (token || localStorage.getItem('yodha_token') || '').trim();
-    if (!authToken) {
-      toast.error('Missing auth token. Please login again.');
-      return null;
-    }
-
-    try {
-      const response = await api.post(
-        '/api/payment/receipt',
-        { paymentId: String(paymentId) },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-          },
-          responseType: 'blob',
-        }
-      );
-
-      return new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/pdf',
-      });
-    } catch (err) {
-      console.error('Receipt download error:', err);
-      toast.error(err?.response?.data?.message || 'Failed to download receipt from server.');
-      return null;
-    }
-  };
-
-  const handleDownloadPaymentSnapshot = async (entry) => {
-    const receiptBlob = await fetchPaymentReceiptBlob(entry?.payment?._id);
-    if (!receiptBlob) return;
-
-    try {
-      toast.info('Downloading receipt...');
-      const url = URL.createObjectURL(receiptBlob);
-      const link = document.createElement('a');
-      link.href = url;
-
-      const dateRaw = String(entry?.payment?.paymentDate || entry?.payment?.createdAt || '').slice(0, 10);
-      link.download = `receipt-${dateRaw || 'payment'}.pdf`;
-
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('Receipt downloaded successfully.');
-    } catch (err) {
-      console.error('Receipt download error:', err);
-      toast.error(err?.response?.data?.message || 'Failed to download receipt from server.');
-    }
-  };
-
-  const handleSharePaymentSnapshot = async (entry) => {
+  const handleSharePaymentSnapshot = async (payItem) => {
     const phoneNumber = sanitizePhoneNumber(user?.number);
     if (!phoneNumber) {
-      toast.error('Member phone number not available.');
+      toast.error("Phone number unavailable.");
       return;
     }
 
-    toast.info('Preparing receipt link...');
-    const receiptBlob = await fetchPaymentReceiptBlob(entry?.payment?._id);
+    const receiptBlob = await fetchPaymentReceiptBlob(payItem?._id);
     if (!receiptBlob) return;
 
-    const receiptSeed = entry?.payment?.receiptNumber || entry?.payment?.paymentNumber || entry?.payment?._id || `payment-${Date.now()}`;
-    const safeReceiptId = toSafeCloudinaryId(receiptSeed) || `payment-${Date.now()}`;
-    const receiptFileName = `receipt-${safeReceiptId}.pdf`;
-    const receiptFile = new File([receiptBlob], receiptFileName, {
-      type: receiptBlob.type || 'application/pdf',
+    const receiptFile = new File([receiptBlob], `receipt-${payItem._id}.pdf`, {
+      type: "application/pdf",
     });
-
     const uploadResult = await uploadFileToCloudinary(receiptFile, {
-      folder: 'billing/receipts',
-      publicId: `${safeReceiptId}-${Date.now()}`,
-      tags: 'billing,receipt',
-      resourceType: 'auto',
-      returnDeleteToken: false,
+      folder: "billing/receipts",
     });
 
     if (!uploadResult?.url) {
-      toast.error(uploadResult?.error || 'Failed to upload receipt to Cloudinary.');
+      toast.error("Cloudinary transfer error.");
       return;
     }
 
-    const message = buildPaymentShareText(entry, user?.fullName || 'Member', uploadResult.url);
-    const shareUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    const opened = window.open(shareUrl, '_blank');
-    if (opened) {
-      opened.opener = null;
-      return;
-    }
-    window.location.href = shareUrl;
+    const msg = encodeURIComponent(
+      `🏋️‍♂️ *YODHA GYM RECEIPT* 🏋️‍♂️\n\nHello ${user.fullName || "Member"},\n\nYour payment of ${formatRupees(payItem.amountPaid)} has been recorded.\nDue Remaining: ${formatRupees(payItem.dueAmount)}\nDownload Receipt: ${uploadResult.url}`,
+    );
+    window.open(`https://wa.me/${phoneNumber}?text=${msg}`, "_blank");
   };
 
-  if (loading) {
-    return <div className="customer-details-loading">Loading member details...</div>;
-  }
+  const getPlanValidity = (startDate, endDate) => {
+    if (!endDate)
+      return { label: "N/A", className: "unknown", hint: "No end date" };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0)
+      return { label: "CLOSED", className: "closed", hint: "Plan ended" };
+    return {
+      label: "ACTIVE",
+      className: "active",
+      hint: `${daysLeft} day(s) left`,
+    };
+  };
 
-  if (!member) {
-    return (
-      <div className="customer-details-error">
-        <h3>{error || 'Member not found.'}</h3>
-        <button type="button" onClick={handleBack}>Back to Customers</button>
-      </div>
-    );
-  }
+  const planValidity = getPlanValidity(
+    member?.planStartDate,
+    member?.planEndDate,
+  );
 
   return (
     <div className="customer-details-page">
       <div className="details-head">
         <button type="button" className="back-btn" onClick={handleBack}>
-          <ArrowLeft size={16} />
-          Back
+          <ArrowLeft size={16} /> Back
         </button>
-
         <div className="headline headline-wrap">
           <div className="headline-meta">
-            <h2>{user?.fullName || 'Member Details'}</h2>
+            <h2>{user?.fullName || "Member Details"}</h2>
             <span className="headline-subtext">
-              {user?.email || user?.number || 'Yodha Member Profile'}
+              {user?.email || user?.number || "Profile View"}
             </span>
           </div>
           {identityProofArr.length > 0 && (
@@ -748,17 +564,21 @@ const CustomerDetails = () => {
         </div>
       </div>
 
-      {/* Identity Proof Modal */}
       {showIdentityModal && (
-        <div className="identity-modal-overlay" onClick={() => setShowIdentityModal(false)}>
-          <div className="identity-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="identity-modal-overlay"
+          onClick={() => setShowIdentityModal(false)}
+        >
+          <div
+            className="identity-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="identity-modal-head">
-              <h3>Identity Proof</h3>
+              <h3>Identity Document Preview</h3>
               <button
                 type="button"
                 className="identity-modal-close"
                 onClick={() => setShowIdentityModal(false)}
-                aria-label="Close identity proof"
               >
                 &times;
               </button>
@@ -766,11 +586,7 @@ const CustomerDetails = () => {
             <div className="identity-modal-grid">
               {identityProofArr.map((img, idx) => (
                 <div key={idx} className="identity-proof-item">
-                  <img
-                    src={img}
-                    alt={`Aadhar ${idx + 1}`}
-                  />
-                  <div className="identity-proof-caption">Aadhar {idx + 1}</div>
+                  <img src={img} alt="Document" />
                 </div>
               ))}
             </div>
@@ -779,49 +595,52 @@ const CustomerDetails = () => {
       )}
 
       <section className="action-rail">
-        <div className="action-message">
-          <h4>{actionLabel}</h4>
-          <p>{actionHint}</p>
-        </div>
-        <button type="button" className="primary-cta fresh" onClick={handlePrimaryAction}>
-          <CreditCard size={16} />
-          {actionLabel}
+        <button
+          type="button"
+          className="primary-cta fresh"
+          onClick={handlePrimaryAction}
+        >
+          <CreditCard size={16} /> New Payment (Renew)
         </button>
       </section>
 
       <section className="details-grid single-card-mode">
         <article className="details-card compact-card full-width">
-          <div className="card-head compact-head plan-head" style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <h3><UserRound size={16} /> Member & Plan Overview</h3>
+          <div className="card-head compact-head plan-head">
+            <h3>
+              <UserRound size={16} /> Member & Plan Overview
+            </h3>
             <div className="plan-validity-inline">
-              <span className={`validity-tag ${planValidity.className}`}>{planValidity.label}</span>
+              <span className={`validity-tag ${planValidity.className}`}>
+                {planValidity.label}
+              </span>
               <small>{planValidity.hint}</small>
             </div>
           </div>
           <div className="info-grid unified-grid">
             <div className="info-cell">
               <span>Name</span>
-              <strong>{user?.fullName || 'N/A'}</strong>
+              <strong>{user?.fullName || "N/A"}</strong>
             </div>
             <div className="info-cell">
               <span>Phone</span>
-              <strong>{user?.number || 'N/A'}</strong>
+              <strong>{user?.number || "N/A"}</strong>
             </div>
             <div className="info-cell">
               <span>Email</span>
-              <strong>{user?.email || 'N/A'}</strong>
+              <strong>{user?.email || "N/A"}</strong>
             </div>
             <div className="info-cell">
               <span>Gender</span>
-              <strong>{member?.gender || 'N/A'}</strong>
+              <strong>{member?.gender || "N/A"}</strong>
             </div>
             <div className="info-cell">
               <span>DOB</span>
               <strong>{formatDate(user?.dob)}</strong>
             </div>
             <div className="info-cell">
-              <span>Plan Name</span>
-              <strong>{plan?.planName || 'N/A'}</strong>
+              <span>Plan Component</span>
+              <strong>{plan?.planName || "N/A"}</strong>
             </div>
             <div className="info-cell">
               <span>Start Date</span>
@@ -832,92 +651,111 @@ const CustomerDetails = () => {
               <strong>{formatDate(member?.planEndDate)}</strong>
             </div>
             <div className="info-cell">
-              <span>Total Payable</span>
-              <strong>{formatCurrency(latestFinancial?.totalBill || member?.totalAmount)}</strong>
+              <span>Current Status Due</span>
+              <strong>{formatCurrency(member?.dueAmount || 0)}</strong>
             </div>
             <div className="info-cell">
-              <span>Paid Amount</span>
-              <strong>{formatCurrency(latestFinancial?.paid)}</strong>
-            </div>
-            <div className="info-cell">
-              <span>Joined</span>
-              <strong>{formatDate(member?.joiningDate || member?.createdAt)}</strong>
+              <span>Total Package Value</span>
+              <strong>{formatCurrency(member?.totalAmount || 0)}</strong>
             </div>
             <div className="info-cell">
               <span>Address</span>
-              <strong>{user?.address || 'N/A'}</strong>
+              <strong>{user?.address || "N/A"}</strong>
             </div>
             <div className="info-cell">
-              <span>Emergency</span>
-              <strong>{member?.emergencyContact || 'N/A'}</strong>
-            </div>
-            <div className="info-cell">
-              <span>Height / Weight</span>
-              <strong>{member?.height || 'N/A'} cm / {member?.weight || 'N/A'} kg</strong>
-            </div>
-            <div className="info-cell">
-              <span>Tag</span>
-              <strong>{plan?.tag || 'N/A'}</strong>
+              <span>Emergency Call</span>
+              <strong>{member?.emergencyContact || "N/A"}</strong>
             </div>
           </div>
         </article>
       </section>
 
       <section className="timeline-card">
-        <h3><CalendarDays size={16} /> Payment Track</h3>
-        {paymentHistory.length > 0 ? (
+        <h3>
+          <CalendarDays size={16} /> Payment Track Record
+        </h3>
+        {payments.length > 0 ? (
           <div className="finance-table-shell">
             <table className="finance-table">
               <thead>
                 <tr>
                   <th>Payment Date</th>
-                  <th>Plan</th>
-                  <th>Plan Dates</th>
-                  <th>Plan Fee</th>
+                  <th>Duration Period</th>
+                  <th>Total Amount</th>
                   <th>Paid Amount</th>
+                  <th>Due</th>
                   <th>Status</th>
                   <th>Method</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {paymentHistory.map((entry) => {
-                  const payment = entry?.payment;
-
+                {payments.map((p) => {
+                  const statusInfo = getPaymentStatus(p.dueAmount);
                   return (
-                    <tr key={entry?.key}>
-                      <td>{formatDate(payment?.paymentDate || payment?.createdAt)}</td>
-                      <td>{entry?.rowPlan?.name}</td>
+                    <tr key={p._id}>
+                      <td>{formatDate(p.paymentDate || p.createdAt)}</td>
                       <td>
-                        <div className="stacked-cell">
-                          <small>Start: {formatDate(entry?.rowPlan?.startDate)}</small>
-                          <small>End: {formatDate(entry?.rowPlan?.endDate)}</small>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          <span>S: {formatDate(p.planStartDate)}</span>
+                          <span>E: {formatDate(p.planEndDate)}</span>
                         </div>
                       </td>
-                      <td>{formatCurrency(entry?.planFee)}</td>
-                      <td>{formatCurrency(entry?.paidAmount)}</td>
+                      <td>{formatCurrency(p.totalBillAmount)}</td>
+                      <td>{formatCurrency(p.amountPaid)}</td>
+                      <td>{formatCurrency(p.dueAmount)}</td>
                       <td>
-                        <span className={`mini-status ${entry?.status?.className}`}>
-                          {entry?.status?.className === 'due' ? <Clock3 size={12} /> : <BadgeCheck size={12} />}
-                          {entry?.status?.label}
-                        </span>
+                        {statusInfo.className === "due" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenClearDueModal(p)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              backgroundColor: "#fff3cd", // Light warning yellow
+                              color: "#856404", // Dark warning text
+                              border: "1px solid #ffeeba",
+                              padding: "4px 8px",
+                              borderRadius: "4px",
+                              fontSize: "0.8rem",
+                              fontWeight: "bold",
+                              cursor: "pointer",
+                              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <Clock3 size={12} />
+                            {statusInfo.label}
+                          </button>
+                        ) : (
+                          <span
+                            className={`mini-status ${statusInfo.className}`}
+                          >
+                            <BadgeCheck size={12} />
+                            {statusInfo.label}
+                          </span>
+                        )}
                       </td>
-                      <td>{payment?.paymentMethod || 'N/A'}</td>
+                      <td>{p.paymentMethod || "CASH"}</td>
                       <td>
                         <div className="timeline-actions">
                           <button
                             type="button"
                             className="icon-btn"
-                            onClick={() => handleDownloadPaymentSnapshot(entry)}
-                            title="Download Summary"
+                            onClick={() => handleDownloadPaymentSnapshot(p)}
                           >
                             <Download size={14} />
                           </button>
                           <button
                             type="button"
                             className="icon-btn"
-                            onClick={() => handleSharePaymentSnapshot(entry)}
-                            title="Share Receipt"
+                            onClick={() => handleSharePaymentSnapshot(p)}
                           >
                             <Share2 size={14} />
                           </button>
@@ -930,53 +768,72 @@ const CustomerDetails = () => {
             </table>
           </div>
         ) : (
-          <div className="empty-note">No payment history available.</div>
+          <div className="empty-note">No payment logs captured.</div>
         )}
       </section>
 
       {showAddPaymentModal && (
-        <div className="add-payment-overlay" role="presentation" onClick={() => setShowAddPaymentModal(false)}>
-          <div className="add-payment-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="add-payment-overlay"
+          onClick={() => setShowAddPaymentModal(false)}
+        >
+          <div
+            className="add-payment-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="modal-head">
-              <h3>Add Payment</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowAddPaymentModal(false)}>
+              <h3>Add Next Renewal Payment</h3>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setShowAddPaymentModal(false)}
+              >
                 <X size={16} />
               </button>
             </div>
-
-            <div className="add-payment-summary">
-              <div>
-                <span>Member</span>
-                <strong>{user?.fullName || 'N/A'}</strong>
-                <small>{user?.number || user?.email || 'N/A'}</small>
-              </div>
-            </div>
-
             <div className="add-payment-form">
               <label className="modal-field">
-                Plan*
-                <select name="planId" value={addPaymentForm.planId} onChange={handleAddPaymentChange} disabled={plansLoading}>
-                  <option value="">{plansLoading ? 'Loading plans...' : 'Select Plan'}</option>
-                  {plans.map((planItem) => (
-                    <option key={planItem?._id} value={planItem?._id}>
-                      {planItem?.planName} ({formatCurrency(planItem?.price)})
+                Plan Component*
+                <select
+                  name="planId"
+                  value={addPaymentForm.planId}
+                  onChange={handleAddPaymentChange}
+                >
+                  <option value="">Select Target Plan</option>
+                  <option
+                    disabled
+                    style={{ fontStyle: "italic", color: "#999" }}
+                  >
+                    -- Loading/Select Plans --
+                  </option>
+                  {plans.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.planName} (₹{p.price})
                     </option>
                   ))}
                 </select>
               </label>
-
               <label className="modal-field">
                 Plan Start Date*
-                <input name="planStartDate" type="date" value={addPaymentForm.planStartDate} onChange={handleAddPaymentChange} />
+                <input
+                  name="planStartDate"
+                  type="date"
+                  value={addPaymentForm.planStartDate}
+                  onChange={handleAddPaymentChange}
+                />
+              </label>
+              <label className="modal-field">
+                Calculated End Date*
+                <input
+                  name="planEndDate"
+                  type="date"
+                  value={addPaymentForm.planEndDate}
+                  onChange={handleAddPaymentChange}
+                />
               </label>
 
               <label className="modal-field">
-                Plan End Date*
-                <input name="planEndDate" type="date" value={addPaymentForm.planEndDate} readOnly />
-              </label>
-
-              <label className="modal-field">
-                Plan Fee*
+                Total Base Fee*
                 <input
                   name="planFee"
                   type="number"
@@ -985,34 +842,140 @@ const CustomerDetails = () => {
                   onWheel={handleNumberWheel}
                 />
               </label>
+              <label className="modal-field">
+                Amount Paid*
+                <input
+                  name="paidAmount"
+                  type="number"
+                  value={addPaymentForm.paidAmount}
+                  onChange={handleAddPaymentChange}
+                  onWheel={handleNumberWheel}
+                />
+              </label>
+              <label className="modal-field">
+                Due Amount
+                <input
+                  name="dueAmount"
+                  type="number"
+                  value={addPaymentForm.dueAmount}
+                  onChange={handleAddPaymentChange}
+                  onWheel={handleNumberWheel}
+                />
+              </label>
 
               <label className="modal-field">
                 Payment Method*
-                <select name="paymentMethod" value={addPaymentForm.paymentMethod} onChange={handleAddPaymentChange}>
-                  <option value="CASH">CASH</option>
+                <select
+                  name="paymentMethod"
+                  value={addPaymentForm.paymentMethod}
+                  onChange={handleAddPaymentChange}
+                >
                   <option value="UPI">UPI</option>
+                  <option value="CASH">CASH</option>
                   <option value="CARD">CARD</option>
                 </select>
               </label>
-
               <label className="modal-field">
-                Payment Date*
-                <input name="paymentDate" type="date" value={addPaymentForm.paymentDate} onChange={handleAddPaymentChange} />
+                Transaction Date*
+                <input
+                  name="paymentDate"
+                  type="date"
+                  value={addPaymentForm.paymentDate}
+                  onChange={handleAddPaymentChange}
+                />
               </label>
             </div>
-
             <div className="modal-actions">
-              <button type="button" className="ghost-btn" onClick={() => setShowAddPaymentModal(false)}>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setShowAddPaymentModal(false)}
+              >
                 Cancel
               </button>
-              <button type="button" className="primary-btn" onClick={handleCreatePayment} disabled={addPaymentSubmitting}>
-                {addPaymentSubmitting ? 'Adding...' : 'Add Payment'}
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={handleCreatePayment}
+                disabled={addPaymentSubmitting}
+              >
+                {addPaymentSubmitting ? "Processing..." : "Save Payment Logs"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {showClearDueModal && (
+        <div
+          className="add-payment-overlay"
+          onClick={() => {
+            if (!clearingDue) {
+              setShowClearDueModal(false);
+              setSelectedPayment(null);
+            }
+          }}
+        >
+          <div
+            className="add-payment-modal"
+            style={{ maxWidth: "420px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h3>Clear Due Amount</h3>
+
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => {
+                  if (!clearingDue) {
+                    setShowClearDueModal(false);
+                    setSelectedPayment(null);
+                  }
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                padding: "20px",
+                textAlign: "center",
+              }}
+            >
+              <p>Are you sure you want to clear this due amount?</p>
+
+              <h2 style={{ marginTop: "10px" }}>
+                {formatCurrency(selectedPayment?.dueAmount)}
+              </h2>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="ghost-btn"
+                disabled={clearingDue}
+                onClick={() => {
+                  setShowClearDueModal(false);
+                  setSelectedPayment(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="primary-btn"
+                disabled={clearingDue}
+                onClick={handleClearDuePayment}
+              >
+                {clearingDue ? "Processing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

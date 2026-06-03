@@ -43,8 +43,6 @@ const getBillingId = (item, index) => {
   ).toUpperCase();
 };
 
-
-// Helper to generate the Payment Receipt ID (like Payments.jsx)
 const normalizeDate = (value) => {
   if (!value) return '';
   const raw = String(value);
@@ -204,9 +202,11 @@ const getPlanDisplayName = (item, planMap) => {
   return getPlanName(item) || planMap?.[planId] || '';
 };
 
+// --- UPDATED HELPER FUNCTIONS ---
 const getBillingAmount = (item) => {
   return toNumber(
-    item?.grandTotal
+    item?.paymentId?.totalBillAmount
+    ?? item?.grandTotal
     ?? item?.totalBillAmount
     ?? item?.subTotal
     ?? item?.totalAmount
@@ -217,7 +217,8 @@ const getBillingAmount = (item) => {
 
 const getBillingPaidAmount = (item) => {
   return toNumber(
-    item?.amountPaid
+    item?.paymentId?.amountPaid
+    ?? item?.amountPaid
     ?? item?.paidAmount
     ?? item?.subTotal
     ?? item?.grandTotal
@@ -227,11 +228,24 @@ const getBillingPaidAmount = (item) => {
   );
 };
 
+const getBillingDueAmount = (item) => {
+  return toNumber(
+    item?.paymentId?.dueAmount 
+    ?? 0
+  );
+};
+
 const getBillingStatus = (item) => {
-  const raw = String(item?.paymentStatus || item?.status || '').toUpperCase();
+  const raw = String(item?.paymentId?.paymentStatus || item?.paymentStatus || item?.status || '').toUpperCase();
+  
+  if (raw === 'PARTIAL') {
+    return { label: 'PARTIAL', className: 'due' }; // Use 'due' class or create 'partial' in SCSS
+  }
+
   const totalBill = getBillingAmount(item);
   const paidAmount = getBillingPaidAmount(item);
-  const isPaid = raw ? ['PAID', 'COMPLETED', 'SUCCESS'].includes(raw) : paidAmount >= totalBill;
+  const isPaid = raw ? ['PAID', 'COMPLETED', 'SUCCESS'].includes(raw) : (paidAmount >= totalBill && totalBill > 0);
+  
   return {
     label: isPaid ? 'PAID' : 'DUE',
     className: isPaid ? 'paid' : 'due',
@@ -395,8 +409,9 @@ const Billing = () => {
       const planId = getPlanId(item);
       const planName = getPlanDisplayName(item, planMap);
       const contact = getMemberContact(item);
-      const paymentMethod = String(item?.paymentMethod || '').toLowerCase();
-      const status = String(item?.paymentStatus || item?.status || '').toLowerCase();
+      // UPDATED SEARCH LOGIC
+      const paymentMethod = String(item?.paymentId?.paymentMethod || item?.paymentMethod || '').toLowerCase();
+      const status = String(item?.paymentId?.paymentStatus || item?.paymentStatus || item?.status || '').toLowerCase();
       return [billingId, memberName, planName, contact, paymentMethod, status].join(' ').toLowerCase().includes(query);
     });
   }, [billings, planMap, searchTerm]);
@@ -461,7 +476,6 @@ const Billing = () => {
       const link = document.createElement('a');
       link.href = url;
 
-      // Billing ID ko file ka naam de dete hain (e.g., INVOICE-1234.pdf)
       const billingId = getBillingId(item, index);
       link.download = `receipt-${billingId.toLowerCase()}.pdf`;
 
@@ -589,24 +603,25 @@ const Billing = () => {
               {visibleBillings.length > 0 ? (
                 visibleBillings.map((item, index) => {
                   const billingId = getBillingId(item, index);
-                  // Find payment object if present (embedded or as paymentId)
                   let paymentObj = null;
                   if (item.paymentId && typeof item.paymentId === 'object') {
                     paymentObj = item.paymentId;
                   } else if (item.payment) {
                     paymentObj = item.payment;
                   }
-                  // Fallback: if paymentId is string, try to use minimal info
                   if (!paymentObj && item.paymentId && typeof item.paymentId === 'string') {
                     paymentObj = { _id: item.paymentId, createdAt: item.paymentDate || item.createdAt };
                   }
+                  
                   const receiptId = getReadableReceipt(paymentObj, index, meta.currentPage, meta.pageSize);
                   const status = getBillingStatus(item);
                   const amount = getBillingAmount(item);
                   const paidAmount = getBillingPaidAmount(item);
-                  const paymentMethod = String(item?.paymentMethod || 'N/A').toUpperCase();
+                  const dueAmount = getBillingDueAmount(item);
+                  const paymentMethod = String(item?.paymentId?.paymentMethod || item?.paymentMethod || 'N/A').toUpperCase();
                   const planId = getPlanId(item);
                   const planName = getPlanDisplayName(item, planMap);
+                  
                   return (
                     <tr key={String(item?._id || item?.id || billingId)}>
                       <td>
@@ -641,6 +656,7 @@ const Billing = () => {
                         <div className="stacked-cell amount-cell">
                           <strong>{formatMoney(amount)}</strong>
                           <small>Paid: {formatMoney(paidAmount)}</small>
+                          {dueAmount > 0 && <small className="due-text" style={{ color: '#e11d48', fontWeight: '500' }}>Due: {formatMoney(dueAmount)}</small>}
                         </div>
                       </td>
                       <td>

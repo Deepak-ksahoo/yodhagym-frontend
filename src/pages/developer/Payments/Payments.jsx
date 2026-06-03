@@ -142,6 +142,8 @@ const Payments = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState(getDefaultAddForm());
+  const [amountPaidTouched, setAmountPaidTouched] = useState(false);
+  const [dueAmountTouched, setDueAmountTouched] = useState(false);
   const [customerQuery, setCustomerQuery] = useState('');
   const [showCustomerMenu, setShowCustomerMenu] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -341,8 +343,6 @@ const Payments = () => {
   );
 
   const totalBillAmount = toNumber(addForm.planFee) + toNumber(addForm.tax);
-  const dueAmount = Math.min(toNumber(addForm.dueAmount), totalBillAmount);
-  const amountPaid = Math.max(totalBillAmount - dueAmount, 0);
 
   useEffect(() => {
     if (!showAddModal || !selectedPlan || !addForm.planStartDate) return;
@@ -373,20 +373,36 @@ const Payments = () => {
   useEffect(() => {
     if (!showAddModal) return;
 
-    const computedDue = Math.min(toNumber(addForm.dueAmount), totalBillAmount);
-    const computedPaid = Math.max(totalBillAmount - computedDue, 0);
-
     setAddForm((prev) => {
-      const nextDue = String(computedDue);
-      const nextPaid = String(computedPaid);
-      if (prev.dueAmount === nextDue && prev.amountPaid === nextPaid) return prev;
+      const currentAmount = toNumber(prev.amountPaid);
+      const currentDue = toNumber(prev.dueAmount);
+
+      let nextAmount = currentAmount;
+      let nextDue = currentDue;
+
+      if (!amountPaidTouched && !dueAmountTouched) {
+        nextAmount = totalBillAmount;
+        nextDue = 0;
+      } else if (amountPaidTouched) {
+        nextDue = Math.max(totalBillAmount - currentAmount, 0);
+      } else {
+        const clampedDue = Math.min(currentDue, totalBillAmount);
+        nextDue = clampedDue;
+        nextAmount = Math.max(totalBillAmount - clampedDue, 0);
+      }
+
+      const nextAmountStr = String(nextAmount);
+      const nextDueStr = String(nextDue);
+
+      if (prev.amountPaid === nextAmountStr && prev.dueAmount === nextDueStr) return prev;
+
       return {
         ...prev,
-        dueAmount: nextDue,
-        amountPaid: nextPaid,
+        amountPaid: nextAmountStr,
+        dueAmount: nextDueStr,
       };
     });
-  }, [addForm.dueAmount, showAddModal, totalBillAmount]);
+  }, [showAddModal, amountPaidTouched, dueAmountTouched, totalBillAmount]);
 
   const visibleTotalPages = Math.max(meta.totalPages, meta.currentPage + (meta.hasNextPage ? 1 : 0));
   const canGoPrev = meta.currentPage > 1;
@@ -416,6 +432,8 @@ const Payments = () => {
 
   const openAddModal = async () => {
     setAddForm(getDefaultAddForm());
+    setAmountPaidTouched(false);
+    setDueAmountTouched(false);
     setCustomerQuery('');
     setShowCustomerMenu(false);
     setShowAddModal(true);
@@ -429,6 +447,21 @@ const Payments = () => {
 
   const handleAddFormChange = (event) => {
     const { name, value } = event.target;
+
+    if (name === 'planId') {
+      setAmountPaidTouched(false);
+      setDueAmountTouched(false);
+    }
+
+    if (name === 'amountPaid') {
+      setAmountPaidTouched(true);
+      setDueAmountTouched(false);
+    }
+
+    if (name === 'dueAmount') {
+      setDueAmountTouched(true);
+      setAmountPaidTouched(false);
+    }
 
     setAddForm((prev) => {
       const next = { ...prev, [name]: value };
@@ -458,9 +491,17 @@ const Payments = () => {
         next.planEndDate = addDaysToDate(value, Number(pickedPlan.durationInDays || 0));
       }
 
+      const updatedTotal = toNumber(next.planFee) + toNumber(next.tax);
+
+      if (name === 'amountPaid') {
+        const paid = toNumber(value);
+        next.dueAmount = String(Math.max(updatedTotal - paid, 0));
+      }
+
       if (name === 'dueAmount') {
-        const cappedDue = Math.min(toNumber(value), toNumber(next.planFee) + toNumber(next.tax));
-        next.dueAmount = String(cappedDue);
+        const due = Math.min(toNumber(value), updatedTotal);
+        next.dueAmount = String(due);
+        next.amountPaid = String(Math.max(updatedTotal - due, 0));
       }
 
       return next;
@@ -504,6 +545,8 @@ const Payments = () => {
       planStartDate: toIsoDateStart(addForm.planStartDate),
       planEndDate: toIsoDateStart(addForm.planEndDate),
       planFee: toNumber(addForm.planFee),
+      amountPaid: toNumber(addForm.amountPaid),
+      dueAmount: toNumber(addForm.dueAmount),
       paymentMethod: String(addForm.paymentMethod).toUpperCase(),
       paymentDate: toIsoDateStart(addForm.paymentDate),
     };
@@ -740,6 +783,16 @@ const Payments = () => {
               <label className="modal-field">
                 Plan Fee*
                 <input name="planFee" type="number" value={addForm.planFee} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
+              </label>
+
+              <label className="modal-field">
+                Amount Paid (Optional)
+                <input name="amountPaid" type="number" value={addForm.amountPaid} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
+              </label>
+
+              <label className="modal-field">
+                Due Amount (Optional)
+                <input name="dueAmount" type="number" value={addForm.dueAmount} onChange={handleAddFormChange} onWheel={handleNumberWheel} />
               </label>
 
               <label className="modal-field">
